@@ -2,15 +2,14 @@
 title: "Data process"
 editor_options: 
   chunk_output_type: console
-output:
-  html_document: 
-    toc: true
-    toc_float: true
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-
+output:
+  html_document: 
+    toc: true
+    toc_float: true
 ```
 
 Load the dataset we want.
@@ -19,34 +18,12 @@ library(tidyverse)
 library(janitor)
 ````
 
-### Data cleaning and choosing
+
 First we import the data and clean it.
 ```{r}
 health = 
   readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'HEALTH') %>%
   clean_names()
 
-socioeconomic = 
-  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'SOCIOECONOMIC') %>%
-  clean_names()
 
-assistance = 
-  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'ASSISTANCE') %>%
-  clean_names()
-
-restaurant = 
-  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'RESTAURANTS') %>%
-  clean_names()
-
-county =
-  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'Supplemental Data - County') %>%
-  clean_names()
-
-state =
-  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'Supplemental Data - State') %>%
-  clean_names()
-
-store = 
-  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'STORES') %>%
-  clean_names()
 ```
