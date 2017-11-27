@@ -16,7 +16,7 @@ Load the dataset we want.
 ```{r}
 library(tidyverse)
 library(janitor)
-````
+```
 
 
 First we import the data and clean it.
