@@ -25,6 +25,29 @@ health =
   readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'HEALTH') %>%
   clean_names()
 
+socioeconomic = 
+  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'SOCIOECONOMIC') %>%
+  clean_names()
+
+assistance = 
+  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'ASSISTANCE') %>%
+  clean_names()
+
+restaurant = 
+  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'RESTAURANTS') %>%
+  clean_names()
+
+county =
+  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'Supplemental Data - County') %>%
+  clean_names()
+
+state =
+  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'Supplemental Data - State') %>%
+  clean_names()
+
+store = 
+  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'STORES') %>%
+  clean_names()
 
 ```
 
