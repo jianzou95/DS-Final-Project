@@ -52,7 +52,8 @@ state =
 
 store = 
   readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'STORES') %>%
-  clean_names(1:27)
+  clean_names() %>%
+  select(1:27)
 
 ```
 
