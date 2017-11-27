@@ -50,3 +50,9 @@ store =
   readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'STORES') %>%
   clean_names()
 ```
+
+
+### A brief description
+```{r}
+
+```
