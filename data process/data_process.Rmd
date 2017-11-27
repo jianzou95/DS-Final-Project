@@ -1,0 +1,29 @@
+---
+title: "Data process"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+output:
+  html_document: 
+    toc: true
+    toc_float: true
+```
+
+Load the dataset we want.
+```{r}
+library(tidyverse)
+library(janitor)
+````
+
+
+First we import the data and clean it.
+```{r}
+health = 
+  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'HEALTH') %>%
+  clean_names()
+
+
+```
