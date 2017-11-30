@@ -134,5 +134,67 @@ social_health_whole %>%
 * proportion of county have presistant poverty in each state, include DC.
 
 
+### Health related figure
+* rate of diabetes increases
+```{r}
+health %>%
+  ggplot() +
+  geom_density(aes(x = pct_diabetes_adults08), fill="#56B4E9") +
+  geom_density(aes(x = pct_diabetes_adults13), fill="#D55E00") +
+  labs(title = 'Comparisons between the rate of diabetes in 2008 and 2013',
+       x = 'rate of dabetes')
 
-### A brief description
+t.test(health$pct_diabetes_adults08, health$pct_diabetes_adults13)
+```
+
+* rate of obesity increases
+```{r}
+health %>%
+  ggplot() +
+  geom_density(aes(x = pct_obese_adults08), fill="#56B4E9") +
+  geom_density(aes(x = pct_obese_adults13), fill="#D55E00") +
+  labs(title = 'Comparisons between the rate of obesity in 2008 and 2013',
+       x = 'rate of obesity')
+
+t.test(health$pct_obese_adults08, health$pct_obese_adults13)
+```
+
+* Linear relationship between rate of diabety and obesity
+```{r}
+require(gridExtra)
+relation_2008 = 
+  health %>%
+  ggplot() +
+  geom_point(aes(x = pct_diabetes_adults08, y = pct_obese_adults08), color="#56B4E9")+
+  geom_smooth(aes(x = pct_diabetes_adults08, y = pct_obese_adults08), color="#56B4E9", method = 'lm') +
+  labs(title = 'Relationship between the diabetes rate and obesity rate in 2008',
+       x = 'diabetes percentage',
+       y = 'obesity percentage')
+relation_2013 = 
+  health %>%
+  ggplot() +
+  geom_point(aes(x = pct_diabetes_adults13, y = pct_obese_adults13), color="#D55E00")+
+  geom_smooth(aes(x = pct_diabetes_adults13, y = pct_obese_adults13), color="#D55E00", method = 'lm') +
+  labs(title = 'Relationship between the diabetes rate and obesity rate in 2013',
+       x = 'diabetes percentage',
+       y = 'obesity percentage')
+grid.arrange(relation_2008, relation_2013, ncol=2)
+# summary(lm(pct_diabetes_adults08~pct_obese_adults08, data = health))
+```
+Here we find that there are linear relationship between diabetes and obesity.
+
+* Compared poverty rate in 2015 with the obesity rate in 2013
+```{r}
+poverty_health = 
+  left_join(health, socioeconomic, by = "fips")
+
+poverty_health %>%
+  ggplot(aes(x = povrate15, y = pct_obese_adults13)) +
+  geom_point(color = "#56B4E9") +
+  labs(title = 'Compared poverty rate in 2015 with the obesity rate in 2013',
+       x = 'poverty in 2015',
+       y = 'obesity rate in 2013')
+
+# summary(lm(pct_obese_adults13~povrate15, data = poverty_health))
+```
+It seems that data are clustered.  
