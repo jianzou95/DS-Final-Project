@@ -204,22 +204,44 @@ poverty_health %>%
 ```
 It seems that data are clustered.  
 
-### Lunch Program
+### Lunch Program in each state
 ```{r}
 #prepare dataset for lunch program
 lunch = state[-52,] %>% 
   gather(key = "year", value = "lunch_participants", national_school_lunch_program_participants_fy_2009:national_school_lunch_program_participants_fy_2015) %>% 
   mutate(year = str_replace(year, "national_school_lunch_program_participants_fy_", "")) %>% 
-  select(statefips, state, year, lunch_participants)
-
-lunch_mean = lunch %>% 
+  select(statefips, state, year, lunch_participants) %>% 
   group_by(state) %>% 
-  mutate(mean_participants = mean(lunch_participants)) %>% 
+  mutate(mean_lunch = mean(lunch_participants)) %>% 
   ungroup(state) %>% 
-  mutate(state = fct_reorder(state, mean_participants))
+  mutate(state = fct_reorder(state, mean_lunch))
+
+breakfast = state[-52,] %>% 
+  gather(key = "year", value = "breakfast_participants",
+         school_breakfast_program_participants_fy_2009:
+         school_breakfast_program_participants_fy_2015) %>% 
+  mutate(year = str_replace(year, "school_breakfast_program_participants_fy_",""),
+         breakfast_participants = as.numeric(breakfast_participants)) %>% 
+  select(statefips, state, year, breakfast_participants) %>% 
+    group_by(state) %>% 
+  mutate(mean_breakfast = mean(breakfast_participants)) %>% 
+  ungroup(state) %>% 
+  mutate(state = fct_reorder(state, mean_breakfast))
+
+summer = state[-52,] %>% 
+  gather(key = "year", value = "summer_participants",
+         summer_food_particpants_fy_2009:
+         summer_food_participants_fy_2015) %>% 
+  mutate(year = str_replace(year, "summer_food_particpants_fy_","")) %>% 
+  mutate(year = str_replace(year, "summer_food_participants_fy_","")) %>% 
+  select(statefips, state, year, summer_participants) %>% 
+  group_by(state) %>% 
+  mutate(mean_summer = mean(summer_participants)) %>% 
+  ungroup(state) %>% 
+  mutate(state = fct_reorder(state, mean_summer))
 
 #Barplot of Average Number of Participants in School Lunch Program (2011-2015)
-ggplot(lunch_mean, aes(x = state, y = mean_participants)) +
+ggplot(lunch, aes(x = state, y = mean_lunch)) +
   geom_bar(stat = "identity", fill = "blue", alpha = .6) +
   labs(title = "Average Number of Participants in School Lunch Program (2011-2015)",
     x = "state",
@@ -227,6 +249,10 @@ ggplot(lunch_mean, aes(x = state, y = mean_participants)) +
   theme(legend.position = "bottom",
         text = element_text(size = 12),
         axis.text.x = element_text(angle = 90, hjust = 1))
+
+#lunch program and breakfast program
+inner_join(lunch,breakfast,)
+ggplot()
 ```
 
 ### The relationship between lunch program and diabetes
