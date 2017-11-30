@@ -19,6 +19,11 @@ library(janitor)
 library(ggridges)
 library(ggthemes)
 
+
+library(stringr)
+library(dplyr)
+library(forcats)
+
 #embedding plots in rmarkdown
 knitr::opts_chunk$set(fig.width=12, fig.height=8, out.width = "80%")
 theme_set(theme_bw())
@@ -54,7 +59,7 @@ county =
 state =
   readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'Supplemental Data - State') %>%
   clean_names() %>%
-  select(1:2, 9:14, 33:40)
+  select(1:2, 9:20, 27:40)
 
 store = 
   readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'STORES') %>%
@@ -198,3 +203,49 @@ poverty_health %>%
 # summary(lm(pct_obese_adults13~povrate15, data = poverty_health))
 ```
 It seems that data are clustered.  
+
+### Lunch Program
+```{r}
+#prepare dataset for lunch program
+lunch = state[-52,] %>% 
+  gather(key = "year", value = "lunch_participants", national_school_lunch_program_participants_fy_2009:national_school_lunch_program_participants_fy_2015) %>% 
+  mutate(year = str_replace(year, "national_school_lunch_program_participants_fy_", "")) %>% 
+  select(statefips, state, year, lunch_participants)
+
+lunch_mean = lunch %>% 
+  group_by(state) %>% 
+  mutate(mean_participants = mean(lunch_participants)) %>% 
+  ungroup(state) %>% 
+  mutate(state = fct_reorder(state, mean_participants))
+
+#Barplot of Average Number of Participants in School Lunch Program (2011-2015)
+ggplot(lunch_mean, aes(x = state, y = mean_participants)) +
+  geom_bar(stat = "identity", fill = "blue", alpha = .6) +
+  labs(title = "Average Number of Participants in School Lunch Program (2011-2015)",
+    x = "state",
+    y = "Average number of participants") +
+  theme(legend.position = "bottom",
+        text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+### The relationship between lunch program and diabetes
+```{r}
+health_13 = health %>% 
+  group_by(state) %>% 
+  mutate(diabetes_13 = mean(pct_diabetes_adults13, na.rm = T),
+         obesites_13 = mean(pct_obese_adults13, na.rm = T)) %>% 
+  mutate(statefips = str_sub(fips, 1, 2))%>% 
+  filter(!duplicated(state)) %>% 
+  ungroup(state) %>% 
+  select(statefips, diabetes_13, obesites_13) %>% 
+  left_join(state, by = "statefips") %>% 
+  rename(lunch_2009 = "national_school_lunch_program_participants_fy_2009",
+         lunch_2011 = "national_school_lunch_program_participants_fy_2011",
+         lunch_2012 = "national_school_lunch_program_participants_fy_2012",
+         lunch_2013 = "national_school_lunch_program_participants_fy_2013") %>% 
+  select(statefips, state, diabetes_13, obesites_13, lunch_2009, lunch_2011, lunch_2012, lunch_2013)
+
+#linear regression: diabetes_13 v.s. lunch participants (2013)
+summary(lm(diabetes_13 ~ log(lunch_2013), data  = health_13))
+```
