@@ -66,77 +66,76 @@ store =
   clean_names() %>%
   select(1:27)
 
+# median household income
+medhincome_08 = readxl::read_xls("../mhi_08.xls", range = "A13:B63",col_names = c("state","medhhinc08")) %>%
+  clean_names() %>%
+  mutate(state = state.abb[match(state,state.name)])
+medhincome_13 = readxl::read_xls("../mhi_13.xls", range = "A11:B61",col_names = c("state","medhhinc13")) %>%
+  clean_names() %>%
+  mutate(state = state.abb[match(state,state.name)])
+medhincome = merge(medhincome_08, medhincome_13,by=c("state"))
 ```
-
 
 ### Socioeconomic VS diabetes and obesity
 ```{r}
-health_state = health %>%
+# extract relavent data
+diabetes = health %>%
   group_by(state) %>%
-  summarise(pct_diabetes_adults08 = mean(pct_diabetes_adults08),
-            pct_diabetes_adults13 = mean(pct_diabetes_adults13),
-            pct_obese_adults08 = mean(pct_obese_adults08),
-            pct_obese_adults13 = mean(pct_obese_adults13))
-  
-socioeconomic_state = socioeconomic %>% 
+  summarise(pct_08 = mean(pct_diabetes_adults08),
+            pct_13 = mean(pct_diabetes_adults13)) %>%
+  gather(key = year, value = pct_diabetes_adults, pct_08:pct_13)%>%
+  separate(year, into = c("remove", "year"), sep = "_") %>%
+  select(-remove)
+
+obese = health %>%
   group_by(state) %>%
-  summarise(pct_65older10 = mean(pct_65older10),
-            pct_18younger10 = mean(pct_18younger10),
-            medhhinc15 = mean(medhhinc15),
-            povrate15 = mean(povrate15),
-            childpovrate15 = mean(childpovrate15),
-            perpov10 = mean(perpov10)/n(),
-            perchldpov10 = mean(perchldpov10)/n())
+  summarise(pct_08 = mean(pct_obese_adults08),
+            pct_13 = mean(pct_obese_adults13)) %>%
+  gather(key = year, value = pct_obese_adults, pct_08:pct_13)%>%
+  separate(year, into = c("remove", "year"), sep = "_") %>%
+  select(-remove)
 
-social_health_whole = merge(socioeconomic, health,by=c("fips", "state", "county"))
-social_health = merge(socioeconomic_state, health_state,by=c("state"))
+health_status = merge(diabetes, obese, by=c("state", "year"))
 
-#normally distributed 
-hist(health$pct_obese_adults13)
-hist(health$pct_diabetes_adults13)
+income = medhincome %>%
+  gather(key = year, value = medhhinc, medhhinc08:medhhinc13)%>%
+  separate(year, into = c("remove", "year"), sep = -3) %>%
+  select(-remove)
 
-# median income VS obesity
-social_health_whole %>%
-  group_by(state) %>%
-  ggplot(aes(x = medhhinc15, y = pct_obese_adults13)) +
-  geom_point(aes(color = state, size = 1), alpha = .6) +
-  geom_smooth() +
-  labs(
-    x = "Median household income, 2015",
-    y = "Percentage of adult obesity, 2013 ")  +  
-  theme(text = element_text(size = 14), 
-        axis.text.x = element_text(size = 10), 
-        axis.text.y = element_text(size = 10))
-
-# median income VS diabetes
-social_health_whole %>%
-  group_by(state) %>%
-  ggplot(aes(x = medhhinc15, y = pct_diabetes_adults13)) +
-  geom_point(aes(color = state, size = 1), alpha = .6) +
-  geom_smooth() +
-  labs(
-    x = "Median household income, 2015",
-    y = "Percentage of adult diabetes, 2013 ")  +  
-  theme(text = element_text(size = 14), 
-        axis.text.x = element_text(size = 10), 
-        axis.text.y = element_text(size = 10))
-
-# Diabetes VS obesity
-social_health_whole %>%
-  group_by(state) %>%
-  ggplot(aes(x = pct_obese_adults13, y = pct_diabetes_adults13)) +
-  geom_point(aes(color = state, size = 1), alpha = .6) +
-  geom_smooth() +
-  labs(
-    x = "Percentage of adult obesity, 2013",
-    y = "Percentage of adult diabetes, 2013 ")  +  
-  theme(text = element_text(size = 14), 
-        axis.text.x = element_text(size = 10), 
-        axis.text.y = element_text(size = 10))
+eco_health = merge(health_status, income, by=c("state", "year"))
 ```
 
-* Even across county 
-* proportion of county have presistant poverty in each state, include DC.
+```{r}
+# plots
+# income VS obesity
+eco_health %>%
+  group_by(year) %>%
+  ggplot(aes(x = medhhinc, y = pct_obese_adults)) +
+  geom_point(aes(color = year), size = 3, alpha = .8) +
+  geom_smooth(se = FALSE) + 
+  facet_grid(. ~ year) +
+  labs(
+    x = "Median household income",
+    y = "Percentage of adult obesity")  +  
+  theme(text = element_text(size = 16), 
+        axis.text.x = element_text(size = 14), 
+        axis.text.y = element_text(size = 14))
+
+# income VS diabetes
+eco_health %>%
+  group_by(year) %>%
+  ggplot(aes(x = medhhinc, y = pct_diabetes_adults)) +
+  geom_point(aes(color = year), size = 3, alpha = .8) +
+  geom_smooth(se = FALSE) + 
+  facet_grid(. ~ year) +
+  labs(
+    x = "Median household income",
+    y = "Percentage of adult obesity")  +  
+  theme(text = element_text(size = 16), 
+        axis.text.x = element_text(size = 14), 
+        axis.text.y = element_text(size = 14))
+
+```
 
 
 ### Health related figure
