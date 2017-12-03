@@ -70,9 +70,14 @@ store =
 medhincome_08 = readxl::read_xls("../mhi_08.xls", range = "A13:B63",col_names = c("state","medhhinc08")) %>%
   clean_names() %>%
   mutate(state = state.abb[match(state,state.name)])
+medhincome_08$state[17] = "DC"
 medhincome_13 = readxl::read_xls("../mhi_13.xls", range = "A11:B61",col_names = c("state","medhhinc13")) %>%
   clean_names() %>%
   mutate(state = state.abb[match(state,state.name)])
+medhincome_13$state[8] = "DC"
+medhincome_13$`income level` = 
+  ifelse(medhincome_13$medhhinc13 < 47242.68,"below average",
+         ifelse(medhincome_13$medhhinc13 < 58380.28, "middle income", "above average"))
 medhincome = merge(medhincome_08, medhincome_13,by=c("state"))
 ```
 
@@ -198,22 +203,26 @@ poverty_health %>%
   labs(title = 'Compared poverty rate in 2015 with the obesity rate in 2013',
        x = 'poverty in 2015',
        y = 'obesity rate in 2013')
-
-# summary(lm(pct_obese_adults13~povrate15, data = poverty_health))
 ```
 It seems that data are clustered.  
 
 ### Lunch Program in each state
 ```{r}
+state_population = state[-52,] %>% 
+  gather(key = "year1", value = "population",
+         state_population_2009:state_population_2016) %>% 
+  mutate(year1 = str_replace(year1, "state_population_","")) %>% 
+  select(state, year1, population) %>% 
+  rename(state1 = state) %>% 
+  filter(!(year1 == "2010" | year1 == "2016"))
+
 #prepare dataset for lunch program
 lunch = state[-52,] %>% 
   gather(key = "year", value = "lunch_participants", national_school_lunch_program_participants_fy_2009:national_school_lunch_program_participants_fy_2015) %>% 
   mutate(year = str_replace(year, "national_school_lunch_program_participants_fy_", "")) %>% 
   select(statefips, state, year, lunch_participants) %>% 
-  group_by(state) %>% 
-  mutate(mean_lunch = mean(lunch_participants)) %>% 
-  ungroup(state) %>% 
-  mutate(state = fct_reorder(state, mean_lunch))
+  left_join(state_population, by = c("year" = "year1", "state" = "state1")) %>% 
+  mutate(lunch_proportion = lunch_participants/population)
 
 breakfast = state[-52,] %>% 
   gather(key = "year", value = "breakfast_participants",
@@ -222,10 +231,8 @@ breakfast = state[-52,] %>%
   mutate(year = str_replace(year, "school_breakfast_program_participants_fy_",""),
          breakfast_participants = as.numeric(breakfast_participants)) %>% 
   select(statefips, state, year, breakfast_participants) %>% 
-    group_by(state) %>% 
-  mutate(mean_breakfast = mean(breakfast_participants)) %>% 
-  ungroup(state) %>% 
-  mutate(state = fct_reorder(state, mean_breakfast))
+  left_join(state_population, by = c("year" = "year1", "state" = "state1")) %>% 
+  mutate(breakfast_proportion = breakfast_participants/population)
 
 summer = state[-52,] %>% 
   gather(key = "year", value = "summer_participants",
@@ -234,43 +241,55 @@ summer = state[-52,] %>%
   mutate(year = str_replace(year, "summer_food_particpants_fy_","")) %>% 
   mutate(year = str_replace(year, "summer_food_participants_fy_","")) %>% 
   select(statefips, state, year, summer_participants) %>% 
-  group_by(state) %>% 
-  mutate(mean_summer = mean(summer_participants)) %>% 
-  ungroup(state) %>% 
-  mutate(state = fct_reorder(state, mean_summer))
-
-#Barplot of Average Number of Participants in School Lunch Program (2011-2015)
-ggplot(lunch, aes(x = state, y = mean_lunch)) +
-  geom_bar(stat = "identity", fill = "blue", alpha = .6) +
-  labs(title = "Average Number of Participants in School Lunch Program (2011-2015)",
-    x = "state",
-    y = "Average number of participants") +
-  theme(legend.position = "bottom",
-        text = element_text(size = 12),
-        axis.text.x = element_text(angle = 90, hjust = 1))
-
-#lunch program and breakfast program
-inner_join(lunch,breakfast,)
-ggplot()
+  left_join(state_population, by = c("year" = "year1", "state" = "state1")) %>% 
+  mutate(summer_proportion = summer_participants/population)
 ```
 
 ### The relationship between lunch program and diabetes
 ```{r}
+lunch_spread = lunch %>% 
+  select(-lunch_participants,-population,-state) %>% 
+  rename(year1 = year, statefips1 = statefips) %>% 
+  spread(key = "year1", value = "lunch_proportion")
+
+breakfast_spread = breakfast %>% 
+  select(-breakfast_participants,-population,-state) %>% 
+  rename(year1 = year, statefips1 = statefips) %>% 
+  spread(key = "year1", value = "breakfast_proportion")
+
+summer_spread = summer %>% 
+  select(-summer_participants,-population,-state) %>% 
+  rename(year1 = year, statefips1 = statefips) %>% 
+  spread(key = "year1", value = "summer_proportion")
+
 health_13 = health %>% 
   group_by(state) %>% 
   mutate(diabetes_13 = mean(pct_diabetes_adults13, na.rm = T),
          obesites_13 = mean(pct_obese_adults13, na.rm = T)) %>% 
   mutate(statefips = str_sub(fips, 1, 2))%>% 
   filter(!duplicated(state)) %>% 
-  ungroup(state) %>% 
-  select(statefips, diabetes_13, obesites_13) %>% 
-  left_join(state, by = "statefips") %>% 
-  rename(lunch_2009 = "national_school_lunch_program_participants_fy_2009",
-         lunch_2011 = "national_school_lunch_program_participants_fy_2011",
-         lunch_2012 = "national_school_lunch_program_participants_fy_2012",
-         lunch_2013 = "national_school_lunch_program_participants_fy_2013") %>% 
-  select(statefips, state, diabetes_13, obesites_13, lunch_2009, lunch_2011, lunch_2012, lunch_2013)
+  ungroup(state) %>%
+  select(statefips, state, diabetes_13, obesites_13) %>% 
+  left_join(lunch_spread[,c(1,5)], by = c("statefips" = "statefips1")) %>% 
+  rename("lunch" = `2013`) %>% 
+  left_join(breakfast_spread[,c(1,5)], by = c("statefips" = "statefips1")) %>% 
+  rename("breakfast" = `2013`) %>% 
+  left_join(summer_spread[,c(1,5)], by = c("statefips" = "statefips1")) %>% 
+  rename("summer" = `2013`) %>% 
+  left_join(medhincome_13, by = "state") %>% 
+  gather(key = "program", value = "participants proportion", lunch:summer)
 
 #linear regression: diabetes_13 v.s. lunch participants (2013)
-summary(lm(diabetes_13 ~ log(lunch_2013), data  = health_13))
+#diabetes_13 = 22.991 + 5.235*ln(lunch_participants_proportion)
+#diabetes_13 = e^(22.991)*(e(5.235))^(lunch_participants_proportion )
+ggplot(health_13,aes(x = log(`participants proportion`), y = diabetes_13)) +
+  geom_point(aes(color = `income level`)) +
+  geom_smooth(method = "lm",formula = y~x) +
+  coord_cartesian(xlim = c(-6, -2)) +
+  labs(title = "Diabetes Rate ~ ln(partic-2pation rate)",
+    x = "",
+    y = "Diabetes Rate") +
+  theme(text = element_text(size = 15),
+        legend.position = "bottom") +
+  facet_grid(. ~program)
 ```
