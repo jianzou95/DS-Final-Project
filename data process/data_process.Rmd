@@ -81,6 +81,53 @@ medhincome_13$`income level` =
 medhincome = merge(medhincome_08, medhincome_13,by=c("state"))
 ```
 
+### Distribution of obeses and diabetes
+We first take a look at the distribution of diabety and obesity in USA in 2013.
+```{r}
+library(plotly)
+health_map = 
+  health %>%
+  group_by(state) %>%
+  summarise(diabetes = mean(pct_diabetes_adults13),
+            obesity = mean(pct_obese_adults13)) %>%
+  ungroup() %>%
+  na.omit() %>%
+  mutate(full_state = state.name[match(state, state.abb)],
+         hover = with(., paste(full_state, '<br>')))
+
+geo_info <- list(
+  scope = 'usa',
+  projection = list(type = 'albers usa'),
+  showlakes = TRUE,
+  lakecolor = toRGB('white')
+)
+
+plot_geo(health_map, locationmode = 'USA-states') %>%
+add_trace(
+  z = ~diabetes, text = ~hover, locations = ~state,
+  color = ~diabetes, colors = 'OrRd'
+) %>%
+colorbar(title = "Diabetes Rate (%)") %>%
+layout(
+  title = 'Adult Diabetes Rate, 2013',
+  geo = geo_info
+  )
+
+
+plot_geo(health_map, locationmode = 'USA-states') %>%
+add_trace(
+  z = ~diabetes, text = ~hover, locations = ~state,
+  color = ~obesity, colors = 'YlGnBu'
+) %>%
+colorbar(title = "Obesity Rate (%)") %>%
+layout(
+  title = 'Adult Obesity Rate, 2013',
+  geo = geo_info
+  )
+
+```
+
+
 ### Socioeconomic VS diabetes and obesity
 ```{r}
 # extract relavent data
@@ -109,6 +156,7 @@ income = medhincome %>%
 
 eco_health = merge(health_status, income, by=c("state", "year"))
 ```
+
 
 ```{r}
 # plots
