@@ -1,0 +1,293 @@
+---
+title: "Data Report"
+output:
+  html_document: 
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Data Import and Cleaning
+```{r message = FALSE, echo = FALSE, warning=FALSE}
+library(tidyverse)
+library(janitor)
+library(ggridges)
+library(ggthemes)
+library(stringr)
+library(dplyr)
+library(forcats)
+library(plotly)
+
+knitr::opts_chunk$set(fig.width=12, fig.height=8, out.width = "80%")
+theme_set(theme_bw())
+
+health = 
+  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'HEALTH') %>%
+  clean_names() %>%
+  select(1:7)
+
+socioeconomic = 
+  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'SOCIOECONOMIC') %>%
+  clean_names() %>%
+  select(1:3, 10:18)
+
+assistance = 
+  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'ASSISTANCE') %>%
+  clean_names() %>%
+  select(1:3, 23:29)
+
+restaurant = 
+  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'RESTAURANTS') %>%
+  clean_names() %>%
+  select(1:9, 16:17)
+
+county =
+  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'Supplemental Data - County') %>%
+  clean_names()
+
+state =
+  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'Supplemental Data - State') %>%
+  clean_names() %>%
+  select(1:2, 9:20, 27:40)
+
+store = 
+  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'STORES') %>%
+  clean_names() %>%
+  select(1:27)
+
+medhincome_08 = readxl::read_xls("../mhi_08.xls", range = "A13:B63",col_names = c("state","medhhinc08")) %>%
+  clean_names() %>%
+  mutate(state = state.abb[match(state,state.name)])
+medhincome_08$state[17] = "DC"
+
+medhincome_13 = readxl::read_xls("../mhi_13.xls", range = "A11:B61",col_names = c("state","medhhinc13")) %>%
+  clean_names() %>%
+  mutate(state = state.abb[match(state,state.name)])
+medhincome_13$state[8] = "DC"
+medhincome_13$`income level` = 
+  ifelse(medhincome_13$medhhinc13 < 47242.68,"below average",
+         ifelse(medhincome_13$medhhinc13 < 58380.28, "middle income", "above average"))
+
+medhincome = merge(medhincome_08, medhincome_13,by=c("state"))
+```
+
+
+### Brief Description about the health data
+We first take a look at the diabetes distribution in USA.
+```{r message = FALSE, echo = FALSE}
+health_map = 
+  health %>%
+  group_by(state) %>%
+  summarise(diabetes = mean(pct_diabetes_adults13),
+            obesity = mean(pct_obese_adults13)) %>%
+  ungroup() %>%
+  na.omit() %>%
+  mutate(full_state = state.name[match(state, state.abb)],
+         hover = with(., paste(full_state, '<br>')))
+
+geo_info <- list(
+  scope = 'usa',
+  projection = list(type = 'albers usa'),
+  showlakes = TRUE,
+  lakecolor = toRGB('white')
+)
+
+plot_geo(health_map, locationmode = 'USA-states') %>%
+add_trace(
+  z = ~diabetes, text = ~hover, locations = ~state,
+  color = ~diabetes, colors = 'OrRd'
+) %>%
+hide_colorbar() %>%
+layout(
+  title = 'Adult Diabetes Rate, 2013',
+  geo = geo_info
+  )
+```
+
+Then we show the distribution of obesity.
+```{r echo = FALSE, message = FALSE}
+plot_geo(health_map, locationmode = 'USA-states') %>%
+add_trace(
+  z = ~diabetes, text = ~hover, locations = ~state,
+  color = ~obesity, colors = 'YlGnBu'
+) %>%
+hide_colorbar() %>%
+layout(
+  title = 'Adult Obesity Rate, 2013',
+  geo = geo_info
+  )
+```
+
+We try to compare the obesity and diabetes.
+```{r echo = FALSE, warning = FALSE, message = FALSE}
+require(gridExtra)
+
+relation_2008 = 
+  health %>%
+  ggplot() +
+  geom_point(aes(x = pct_diabetes_adults08, y = pct_obese_adults08), color="#56B4E9")+
+  geom_smooth(aes(x = pct_diabetes_adults08, y = pct_obese_adults08), color="#56B4E9", method = 'lm') +
+  labs(title = 'Relationship between the diabetes rate and obesity rate in 2008',
+       x = 'diabetes percentage',
+       y = 'obesity percentage')
+
+relation_2013 = 
+  health %>%
+  ggplot() +
+  geom_point(aes(x = pct_diabetes_adults13, y = pct_obese_adults13), color="#D55E00")+
+  geom_smooth(aes(x = pct_diabetes_adults13, y = pct_obese_adults13), color="#D55E00", method = 'lm') +
+  labs(title = 'Relationship between the diabetes rate and obesity rate in 2013',
+       x = 'diabetes percentage',
+       y = 'obesity percentage')
+
+grid.arrange(relation_2008, relation_2013, ncol=2)
+```
+
+Here we test the relationship between diabetes and obesities finding there are linear relationship between them.
+
+
+### Relationship between diseases and one covariate
+#### Socioeconomic
+* Relationship between median household income and obesity.
+```{r message = FALSE, warning = FALSE}
+diabetes = health %>%
+  group_by(state) %>%
+  summarise(pct_08 = mean(pct_diabetes_adults08),
+            pct_13 = mean(pct_diabetes_adults13)) %>%
+  gather(key = year, value = pct_diabetes_adults, pct_08:pct_13)%>%
+  separate(year, into = c("remove", "year"), sep = "_") %>%
+  select(-remove)
+
+obese = health %>%
+  group_by(state) %>%
+  summarise(pct_08 = mean(pct_obese_adults08),
+            pct_13 = mean(pct_obese_adults13)) %>%
+  gather(key = year, value = pct_obese_adults, pct_08:pct_13)%>%
+  separate(year, into = c("remove", "year"), sep = "_") %>%
+  select(-remove)
+
+health_status = merge(diabetes, obese, by=c("state", "year"))
+
+income = medhincome %>%
+  gather(key = year, value = medhhinc, medhhinc08:medhhinc13)%>%
+  separate(year, into = c("remove", "year"), sep = -3) %>%
+  select(-remove)
+
+eco_health = merge(health_status, income, by=c("state", "year"))
+
+eco_health %>%
+  group_by(year) %>%
+  ggplot(aes(x = medhhinc, y = pct_obese_adults)) +
+  geom_point(aes(color = year), size = 3, alpha = .8) +
+  geom_smooth(se = FALSE) + 
+  facet_grid(. ~ year) +
+  labs(
+    x = "Median household income",
+    y = "Percentage of adult obesity")  +  
+  theme(text = element_text(size = 16), 
+        axis.text.x = element_text(size = 14), 
+        axis.text.y = element_text(size = 14))
+```
+
+* Relationship between poverty and obesity
+```{r warning = FALSE}
+poverty_health = 
+  left_join(health, socioeconomic, by = "fips")
+
+poverty_health %>%
+  ggplot(aes(x = povrate15, y = pct_obese_adults13)) +
+  geom_point(color = "#56B4E9") +
+  labs(title = 'Compared poverty rate in 2015 with the obesity rate in 2013',
+       x = 'poverty in 2015',
+       y = 'obesity rate in 2013')
+```
+
+#### Lunch program
+```{r}
+state_population = state[-52,] %>% 
+  gather(key = "year1", value = "population",
+         state_population_2009:state_population_2016) %>% 
+  mutate(year1 = str_replace(year1, "state_population_","")) %>% 
+  select(state, year1, population) %>% 
+  rename(state1 = state) %>% 
+  filter(!(year1 == "2010" | year1 == "2016"))
+
+#prepare dataset for lunch program
+lunch = state[-52,] %>% 
+  gather(key = "year", value = "lunch_participants", national_school_lunch_program_participants_fy_2009:national_school_lunch_program_participants_fy_2015) %>% 
+  mutate(year = str_replace(year, "national_school_lunch_program_participants_fy_", "")) %>% 
+  select(statefips, state, year, lunch_participants) %>% 
+  left_join(state_population, by = c("year" = "year1", "state" = "state1")) %>% 
+  mutate(lunch_proportion = lunch_participants/population)
+
+breakfast = state[-52,] %>% 
+  gather(key = "year", value = "breakfast_participants",
+         school_breakfast_program_participants_fy_2009:
+         school_breakfast_program_participants_fy_2015) %>% 
+  mutate(year = str_replace(year, "school_breakfast_program_participants_fy_",""),
+         breakfast_participants = as.numeric(breakfast_participants)) %>% 
+  select(statefips, state, year, breakfast_participants) %>% 
+  left_join(state_population, by = c("year" = "year1", "state" = "state1")) %>% 
+  mutate(breakfast_proportion = breakfast_participants/population)
+
+summer = state[-52,] %>% 
+  gather(key = "year", value = "summer_participants",
+         summer_food_particpants_fy_2009:
+         summer_food_participants_fy_2015) %>% 
+  mutate(year = str_replace(year, "summer_food_particpants_fy_","")) %>% 
+  mutate(year = str_replace(year, "summer_food_participants_fy_","")) %>% 
+  select(statefips, state, year, summer_participants) %>% 
+  left_join(state_population, by = c("year" = "year1", "state" = "state1")) %>% 
+  mutate(summer_proportion = summer_participants/population)
+
+
+lunch_spread = lunch %>% 
+  select(-lunch_participants,-population,-state) %>% 
+  rename(year1 = year, statefips1 = statefips) %>% 
+  spread(key = "year1", value = "lunch_proportion")
+
+breakfast_spread = breakfast %>% 
+  select(-breakfast_participants,-population,-state) %>% 
+  rename(year1 = year, statefips1 = statefips) %>% 
+  spread(key = "year1", value = "breakfast_proportion")
+
+summer_spread = summer %>% 
+  select(-summer_participants,-population,-state) %>% 
+  rename(year1 = year, statefips1 = statefips) %>% 
+  spread(key = "year1", value = "summer_proportion")
+
+health_13 = health %>% 
+  group_by(state) %>% 
+  mutate(diabetes_13 = mean(pct_diabetes_adults13, na.rm = T),
+         obesites_13 = mean(pct_obese_adults13, na.rm = T)) %>% 
+  mutate(statefips = str_sub(fips, 1, 2))%>% 
+  filter(!duplicated(state)) %>% 
+  ungroup(state) %>%
+  select(statefips, state, diabetes_13, obesites_13) %>% 
+  left_join(lunch_spread[,c(1,5)], by = c("statefips" = "statefips1")) %>% 
+  rename("lunch" = `2013`) %>% 
+  left_join(breakfast_spread[,c(1,5)], by = c("statefips" = "statefips1")) %>% 
+  rename("breakfast" = `2013`) %>% 
+  left_join(summer_spread[,c(1,5)], by = c("statefips" = "statefips1")) %>% 
+  rename("summer" = `2013`) %>% 
+  left_join(medhincome_13, by = "state") %>% 
+  gather(key = "program", value = "participants proportion", lunch:summer)
+
+#linear regression: diabetes_13 v.s. lunch participants (2013)
+#diabetes_13 = 22.991 + 5.235*ln(lunch_participants_proportion)
+#diabetes_13 = e^(22.991)*(e(5.235))^(lunch_participants_proportion )
+ggplot(health_13,aes(x = log(`participants proportion`), y = diabetes_13)) +
+  geom_point(aes(color = `income level`)) +
+  geom_smooth(method = "lm",formula = y~x) +
+  coord_cartesian(xlim = c(-6, -2)) +
+  labs(title = "Diabetes Rate ~ ln(partic-2pation rate)",
+    x = "",
+    y = "Diabetes Rate") +
+  theme(text = element_text(size = 15),
+        legend.position = "bottom") +
+  facet_grid(. ~program)
+
+```
