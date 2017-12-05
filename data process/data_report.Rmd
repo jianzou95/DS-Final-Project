@@ -1,17 +1,19 @@
 ---
-title: "Data Report"
-output:
-  html_document: 
-    toc: true
-    toc_float: true
+title: "Health Status and Food Environment"
+author: "Group 9"
+output: 
+  html_document:
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
 
-### Data Import and Cleaning
-```{r message = FALSE, echo = FALSE, warning=FALSE}
 library(tidyverse)
 library(janitor)
 library(ggridges)
@@ -21,9 +23,22 @@ library(dplyr)
 library(forcats)
 library(plotly)
 
-knitr::opts_chunk$set(fig.width=12, fig.height=8, out.width = "80%")
 theme_set(theme_bw())
+theme_update(legend.position = "bottom")
+```
 
+## Introduction
+Diabetes is a chronic disease whose prevalence has increased rapidly in the past few decades. According to the report from WHO, in 2014, the prevalence of diabetes among adult population had risen from 4.7% to 8.5%  comparing to that in 1980 (WHO, 2016). It is projected as the seventh leading cause of mortality in 2030 (Mathers & Loncar, 2006).  
+
+In the U.S., the data of 2015 shows that 7.2% of the population are diagnosed with Diabetes(CDC, 2017). In 2013, it ranked as the seventh leading cause of  death in the nation (CDC). Previous studies identified obesity as the main risk factor of  type 2 diabetes (which account for 95% cases of diabetes in the U.S.)(Smyth & Heron, 2006). Meanwhile,  consumption of artificial sweetened beverage(Koning et al, 2011) and  prenatal exposure to famine under certain circumstances(Lumey, Khalangot & Vaiserman, 2015) are both related to the increased prevalence of type 2 diabetes. The report from CDC also demonstrates that there are certain association between socioeconomic status and the prevalence(CDC, 2017). 
+
+Inspiring by these findings which are all somehow related to food accessibility, we want to explore the association between food related factors, including ……, and the prevalence of diabetes in the US. Over the course of the exploration of the data, we further want to build a model to explain the relationship between food related factors and the prevalence of Diabetes.
+
+## Data and Method
+The dataset we would like to use is <B>Food Environment Atlas</B> which can be found on [data.gov](https://catalog.data.gov/dataset/food-environment-atlas-f4a22).
+
+In addition to this main dataset, we also use another two dataset, <B>Median Household Income (In 2013 Inflation-adjusted Dollars)</B>by [State Ranked](https://www.census.gov/data/tables/2014/demo/income-poverty/p60-249.html) from Highest to Lowest Using 3-Year Average (2011-2013), and  <B>Median Household Income (In 2008 Inflation-adjusted Dollars)</B> by [State Ranked](https://www.census.gov/data/tables/2009/demo/income-poverty/p60-236.html.) from Highest to Lowest Using 3-Year Average: 2006-2008 from census.gov. 
+```{r data_import}
 health = 
   readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'HEALTH') %>%
   clean_names() %>%
@@ -58,6 +73,7 @@ store =
   clean_names() %>%
   select(1:27)
 
+
 medhincome_08 = readxl::read_xls("../mhi_08.xls", range = "A13:B63",col_names = c("state","medhhinc08")) %>%
   clean_names() %>%
   mutate(state = state.abb[match(state,state.name)])
@@ -73,11 +89,11 @@ medhincome_13$`income level` =
 
 medhincome = merge(medhincome_08, medhincome_13,by=c("state"))
 ```
-
-
-### Brief Description about the health data
-We first take a look at the diabetes distribution in USA.
-```{r message = FALSE, echo = FALSE}
+ 
+## Results
+### National diabetes and obesity data in 2008 and 2013
+We first take a look at the distribution of diabetes and obesity in USA in 2013. Deeper color indicates higher rates of diabetes or obesity. Southeastern part has higher diabetes and obesity rates.
+```{r map}
 health_map = 
   health %>%
   group_by(state) %>%
@@ -100,194 +116,70 @@ add_trace(
   z = ~diabetes, text = ~hover, locations = ~state,
   color = ~diabetes, colors = 'OrRd'
 ) %>%
-hide_colorbar() %>%
+colorbar(title = "Diabetes Rate (%)") %>%
 layout(
   title = 'Adult Diabetes Rate, 2013',
   geo = geo_info
   )
-```
 
-Then we show the distribution of obesity.
-```{r echo = FALSE, message = FALSE}
 plot_geo(health_map, locationmode = 'USA-states') %>%
 add_trace(
-  z = ~diabetes, text = ~hover, locations = ~state,
+  z = ~obesity, text = ~hover, locations = ~state,
   color = ~obesity, colors = 'YlGnBu'
 ) %>%
-hide_colorbar() %>%
+colorbar(title = "Obesity Rate (%)") %>%
 layout(
   title = 'Adult Obesity Rate, 2013',
   geo = geo_info
   )
 ```
+We then take a look at the distribution of diabetes and obesity nationally.Paired t-test results indicates that both diabetes and obesity rate significantlly increase from 2008 to 2013. This conclusion is consist with our literature research. Diabtes and obesity rates keep rising in the past decades in USA.(Mokdad A H, et al., 2001)
+```{r diabetes_obesities_overyear, warning = FALSE, message = FALSE}
+require(gridExtra)
+t_test_diabetes = 
+  health %>%
+  ggplot() +
+  geom_density(aes(x = pct_obese_adults08), color = "#56B4E9", fill ="#56B4E9", alpha = .4) +
+  geom_density(aes(x = pct_obese_adults13), color = "#D55E00",fill ="#D55E00", alpha = .4) +
+  labs(title = 'Obesity rate in 08 and 13',
+       x = 'rate of obesity')
 
-We try to compare the obesity and diabetes.
-```{r echo = FALSE, warning = FALSE, message = FALSE}
+t_test_obesity = 
+  health %>%
+  ggplot() +
+  geom_density(aes(x = pct_diabetes_adults08), color = "#56B4E9", fill ="#56B4E9", alpha = .4) +
+  geom_density(aes(x = pct_diabetes_adults13), color = "#D55E00",fill ="#D55E00", alpha = .4) +
+  labs(title = 'Diabetes rate in 08 and 13',
+       x = 'rate of diabetes')
+
+grid.arrange(t_test_diabetes, t_test_obesity, ncol=2)
+
+t.test(health$pct_obese_adults08, health$pct_obese_adults13, paired = TRUE)
+t.test(health$pct_diabetes_adults08, health$pct_diabetes_adults13, paired = TRUE)
+```
+Finding the similar distribution of diabetes and obesity, we continue to test the relationship between diabetes and obesity in 2008 and 2013 respectively. After the linear regression, we find that there are significant linear relationship between diabetes and obesity both in 2008 and 2013. Around 50% variation of diabetes could be explained by obesity. This conclusion is consistent with other national researches.(Nguyen, et al., 2011)
+```{r relationship_dibetes_obesity, message = FALSE, warning = FALSE}
 require(gridExtra)
 
 relation_2008 = 
   health %>%
   ggplot() +
-  geom_point(aes(x = pct_diabetes_adults08, y = pct_obese_adults08), color="#56B4E9")+
-  geom_smooth(aes(x = pct_diabetes_adults08, y = pct_obese_adults08), color="#56B4E9", method = 'lm') +
-  labs(title = 'Relationship between the diabetes rate and obesity rate in 2008',
-       x = 'diabetes percentage',
-       y = 'obesity percentage')
+  geom_point(aes(x = pct_obese_adults08, y = pct_diabetes_adults08), color="#56B4E9")+
+  geom_smooth(aes(x = pct_obese_adults08, y = pct_diabetes_adults08), color="#56B4E9", method = 'lm') +
+  labs(title = 'Relationship between the obesity and diabetes rate in 2008',
+       x = 'obesity percentage',
+       y = 'diabetes percentage')
 
 relation_2013 = 
   health %>%
   ggplot() +
-  geom_point(aes(x = pct_diabetes_adults13, y = pct_obese_adults13), color="#D55E00")+
-  geom_smooth(aes(x = pct_diabetes_adults13, y = pct_obese_adults13), color="#D55E00", method = 'lm') +
-  labs(title = 'Relationship between the diabetes rate and obesity rate in 2013',
-       x = 'diabetes percentage',
-       y = 'obesity percentage')
-
+  geom_point(aes(x = pct_obese_adults13, y = pct_diabetes_adults13), color="#D55E00")+
+  geom_smooth(aes(x = pct_obese_adults13, y = pct_diabetes_adults13), color="#D55E00", method = 'lm') +
+  labs(title = 'Relationship between the obesity and diabetes rate in 2013',
+       x = 'obesity percentage',
+       y = 'diabetes percentage')
 grid.arrange(relation_2008, relation_2013, ncol=2)
-```
 
-Here we test the relationship between diabetes and obesities finding there are linear relationship between them.
-
-
-### Relationship between diseases and one covariate
-#### Socioeconomic
-* Relationship between median household income and obesity.
-```{r message = FALSE, warning = FALSE}
-diabetes = health %>%
-  group_by(state) %>%
-  summarise(pct_08 = mean(pct_diabetes_adults08),
-            pct_13 = mean(pct_diabetes_adults13)) %>%
-  gather(key = year, value = pct_diabetes_adults, pct_08:pct_13)%>%
-  separate(year, into = c("remove", "year"), sep = "_") %>%
-  select(-remove)
-
-obese = health %>%
-  group_by(state) %>%
-  summarise(pct_08 = mean(pct_obese_adults08),
-            pct_13 = mean(pct_obese_adults13)) %>%
-  gather(key = year, value = pct_obese_adults, pct_08:pct_13)%>%
-  separate(year, into = c("remove", "year"), sep = "_") %>%
-  select(-remove)
-
-health_status = merge(diabetes, obese, by=c("state", "year"))
-
-income = medhincome %>%
-  gather(key = year, value = medhhinc, medhhinc08:medhhinc13)%>%
-  separate(year, into = c("remove", "year"), sep = -3) %>%
-  select(-remove)
-
-eco_health = merge(health_status, income, by=c("state", "year"))
-
-eco_health %>%
-  group_by(year) %>%
-  ggplot(aes(x = medhhinc, y = pct_obese_adults)) +
-  geom_point(aes(color = year), size = 3, alpha = .8) +
-  geom_smooth(se = FALSE) + 
-  facet_grid(. ~ year) +
-  labs(
-    x = "Median household income",
-    y = "Percentage of adult obesity")  +  
-  theme(text = element_text(size = 16), 
-        axis.text.x = element_text(size = 14), 
-        axis.text.y = element_text(size = 14))
-```
-
-* Relationship between poverty and obesity
-```{r warning = FALSE}
-poverty_health = 
-  left_join(health, socioeconomic, by = "fips")
-
-poverty_health %>%
-  ggplot(aes(x = povrate15, y = pct_obese_adults13)) +
-  geom_point(color = "#56B4E9") +
-  labs(title = 'Compared poverty rate in 2015 with the obesity rate in 2013',
-       x = 'poverty in 2015',
-       y = 'obesity rate in 2013')
-```
-
-#### Lunch program
-```{r}
-state_population = state[-52,] %>% 
-  gather(key = "year1", value = "population",
-         state_population_2009:state_population_2016) %>% 
-  mutate(year1 = str_replace(year1, "state_population_","")) %>% 
-  select(state, year1, population) %>% 
-  rename(state1 = state) %>% 
-  filter(!(year1 == "2010" | year1 == "2016"))
-
-#prepare dataset for lunch program
-lunch = state[-52,] %>% 
-  gather(key = "year", value = "lunch_participants", national_school_lunch_program_participants_fy_2009:national_school_lunch_program_participants_fy_2015) %>% 
-  mutate(year = str_replace(year, "national_school_lunch_program_participants_fy_", "")) %>% 
-  select(statefips, state, year, lunch_participants) %>% 
-  left_join(state_population, by = c("year" = "year1", "state" = "state1")) %>% 
-  mutate(lunch_proportion = lunch_participants/population)
-
-breakfast = state[-52,] %>% 
-  gather(key = "year", value = "breakfast_participants",
-         school_breakfast_program_participants_fy_2009:
-         school_breakfast_program_participants_fy_2015) %>% 
-  mutate(year = str_replace(year, "school_breakfast_program_participants_fy_",""),
-         breakfast_participants = as.numeric(breakfast_participants)) %>% 
-  select(statefips, state, year, breakfast_participants) %>% 
-  left_join(state_population, by = c("year" = "year1", "state" = "state1")) %>% 
-  mutate(breakfast_proportion = breakfast_participants/population)
-
-summer = state[-52,] %>% 
-  gather(key = "year", value = "summer_participants",
-         summer_food_particpants_fy_2009:
-         summer_food_participants_fy_2015) %>% 
-  mutate(year = str_replace(year, "summer_food_particpants_fy_","")) %>% 
-  mutate(year = str_replace(year, "summer_food_participants_fy_","")) %>% 
-  select(statefips, state, year, summer_participants) %>% 
-  left_join(state_population, by = c("year" = "year1", "state" = "state1")) %>% 
-  mutate(summer_proportion = summer_participants/population)
-
-
-lunch_spread = lunch %>% 
-  select(-lunch_participants,-population,-state) %>% 
-  rename(year1 = year, statefips1 = statefips) %>% 
-  spread(key = "year1", value = "lunch_proportion")
-
-breakfast_spread = breakfast %>% 
-  select(-breakfast_participants,-population,-state) %>% 
-  rename(year1 = year, statefips1 = statefips) %>% 
-  spread(key = "year1", value = "breakfast_proportion")
-
-summer_spread = summer %>% 
-  select(-summer_participants,-population,-state) %>% 
-  rename(year1 = year, statefips1 = statefips) %>% 
-  spread(key = "year1", value = "summer_proportion")
-
-health_13 = health %>% 
-  group_by(state) %>% 
-  mutate(diabetes_13 = mean(pct_diabetes_adults13, na.rm = T),
-         obesites_13 = mean(pct_obese_adults13, na.rm = T)) %>% 
-  mutate(statefips = str_sub(fips, 1, 2))%>% 
-  filter(!duplicated(state)) %>% 
-  ungroup(state) %>%
-  select(statefips, state, diabetes_13, obesites_13) %>% 
-  left_join(lunch_spread[,c(1,5)], by = c("statefips" = "statefips1")) %>% 
-  rename("lunch" = `2013`) %>% 
-  left_join(breakfast_spread[,c(1,5)], by = c("statefips" = "statefips1")) %>% 
-  rename("breakfast" = `2013`) %>% 
-  left_join(summer_spread[,c(1,5)], by = c("statefips" = "statefips1")) %>% 
-  rename("summer" = `2013`) %>% 
-  left_join(medhincome_13, by = "state") %>% 
-  gather(key = "program", value = "participants proportion", lunch:summer)
-
-#linear regression: diabetes_13 v.s. lunch participants (2013)
-#diabetes_13 = 22.991 + 5.235*ln(lunch_participants_proportion)
-#diabetes_13 = e^(22.991)*(e(5.235))^(lunch_participants_proportion )
-ggplot(health_13,aes(x = log(`participants proportion`), y = diabetes_13)) +
-  geom_point(aes(color = `income level`)) +
-  geom_smooth(method = "lm",formula = y~x) +
-  coord_cartesian(xlim = c(-6, -2)) +
-  labs(title = "Diabetes Rate ~ ln(partic-2pation rate)",
-    x = "",
-    y = "Diabetes Rate") +
-  theme(text = element_text(size = 15),
-        legend.position = "bottom") +
-  facet_grid(. ~program)
-
+lm(pct_diabetes_adults08~pct_obese_adults08, data = health) %>% summary()
+lm(pct_diabetes_adults13~pct_obese_adults13, data = health) %>% summary()
 ```
