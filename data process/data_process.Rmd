@@ -132,8 +132,8 @@ require(gridExtra)
 t_test_diabetes = 
   health %>%
   ggplot() +
-  geom_density(aes(x = pct_obese_adults08), color ="#56B4E9") +
-  geom_density(aes(x = pct_obese_adults13), color ="#D55E00") +
+  geom_density(aes(x = pct_obese_adults08), color = "#56B4E9", fill ="#56B4E9", alpha = .4) +
+  geom_density(aes(x = pct_obese_adults13), color = "#D55E00",fill ="#D55E00", alpha = .4) +
   labs(title = 'Comparisons between the rate of obesity in 2008 and 2013',
        x = 'rate of obesity')
 
@@ -142,12 +142,13 @@ t.test(health$pct_obese_adults08, health$pct_obese_adults13, paired=TRUE)
 t_test_obesity = 
   health %>%
   ggplot() +
-  geom_density(aes(x = pct_obese_adults08), color="#56B4E9") +
-  geom_density(aes(x = pct_obese_adults13), color="#D55E00") +
+  geom_density(aes(x = pct_diabetes_adults08), color = "#56B4E9", fill ="#56B4E9", alpha = .4) +
+  geom_density(aes(x = pct_diabetes_adults13), color = "#D55E00",fill ="#D55E00", alpha = .4) +
   labs(title = 'Comparisons between the rate of obesity in 2008 and 2013',
-       x = 'rate of obesity')
+       x = 'rate of diabetes')
 
 t.test(health$pct_obese_adults08, health$pct_obese_adults13, paired = TRUE)
+t.test(health$pct_diabetes_adults08, health$pct_diabetes_adults13, paired = TRUE)
 
 grid.arrange(t_test_diabetes, t_test_obesity, ncol=2)
 
