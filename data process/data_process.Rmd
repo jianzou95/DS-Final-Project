@@ -1,11 +1,8 @@
 ---
 title: "Data process"
-editor_options: 
-  chunk_output_type: console
-  output:
-  html_document: 
-    toc: true
-    toc_float: true
+output: 
+  html_document:
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
@@ -82,7 +79,7 @@ medhincome = merge(medhincome_08, medhincome_13,by=c("state"))
 ```
 
 ### Distribution of obeses and diabetes
-We first take a look at the distribution of diabety and obesity in USA in 2013.
+We first take a look at the distribution of diabetes and obesity in USA in 2013. Deeper color indicates higher rates of diabety or obetes. Southeastern part has higher diabetes and obesity rates. Especially, Alamba has the highest diabetes and obesity rate. 
 ```{r}
 library(plotly)
 health_map = 
@@ -116,7 +113,7 @@ layout(
 
 plot_geo(health_map, locationmode = 'USA-states') %>%
 add_trace(
-  z = ~diabetes, text = ~hover, locations = ~state,
+  z = ~obesity, text = ~hover, locations = ~state,
   color = ~obesity, colors = 'YlGnBu'
 ) %>%
 colorbar(title = "Obesity Rate (%)") %>%
@@ -127,6 +124,61 @@ layout(
 
 ```
 
+We then take a look at the distribution of diabetes and obesity nationally.  
+Paired t-test results indicates that both diabetes and obesity rate significantlly increase from 2008 to 2013. This conclusion is consist with our literature research. Diabtes and obesity rates keep rising in the past decades in USA.(Mokdad A H, et al., 2001)
+```{r}
+require(gridExtra)
+
+t_test_diabetes = 
+  health %>%
+  ggplot() +
+  geom_density(aes(x = pct_obese_adults08), color ="#56B4E9") +
+  geom_density(aes(x = pct_obese_adults13), color ="#D55E00") +
+  labs(title = 'Comparisons between the rate of obesity in 2008 and 2013',
+       x = 'rate of obesity')
+
+t.test(health$pct_obese_adults08, health$pct_obese_adults13, paired=TRUE)
+
+t_test_obesity = 
+  health %>%
+  ggplot() +
+  geom_density(aes(x = pct_obese_adults08), color="#56B4E9") +
+  geom_density(aes(x = pct_obese_adults13), color="#D55E00") +
+  labs(title = 'Comparisons between the rate of obesity in 2008 and 2013',
+       x = 'rate of obesity')
+
+t.test(health$pct_obese_adults08, health$pct_obese_adults13, paired = TRUE)
+
+grid.arrange(t_test_diabetes, t_test_obesity, ncol=2)
+
+```
+
+Finding the similar distribution of diabetes and obesity, we continue to test the relationship between diabetes and obesity in 2008 and 2013 respectively. After the linear regression, we find that there are significant linear relationship between diabetes and obesity both in 2008 and 2013. Around 50% variation of diabetes could be explained by obesity. This conclusion is consistent with other national researches.(Nguyen, et al., 2011)
+```{r}
+require(gridExtra)
+
+relation_2008 = 
+  health %>%
+  ggplot() +
+  geom_point(aes(x = pct_obese_adults08, y = pct_diabetes_adults08), color="#56B4E9")+
+  geom_smooth(aes(x = pct_obese_adults08, y = pct_diabetes_adults08), color="#56B4E9", method = 'lm') +
+  labs(title = 'Relationship between the obesity and diabetes rate in 2008',
+       x = 'obesity percentage',
+       y = 'diabetes percentage')
+
+relation_2013 = 
+  health %>%
+  ggplot() +
+  geom_point(aes(x = pct_obese_adults13, y = pct_diabetes_adults13), color="#D55E00")+
+  geom_smooth(aes(x = pct_obese_adults13, y = pct_diabetes_adults13), color="#D55E00", method = 'lm') +
+  labs(title = 'Relationship between the obesity and diabetes rate in 2013',
+       x = 'obesity percentage',
+       y = 'diabetes percentage')
+grid.arrange(relation_2008, relation_2013, ncol=2)
+
+summary(lm(pct_diabetes_adults08~pct_obese_adults08, data = health))
+summary(lm(pct_diabetes_adults13~pct_obese_adults13, data = health))
+```
 
 ### Socioeconomic VS diabetes and obesity
 ```{r}
