@@ -63,16 +63,25 @@ store =
   clean_names() %>%
   select(1:27)
 
+assistance = 
+  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'ASSISTANCE') %>%
+  clean_names() %>%
+  select(1:3,23:24,30:31)
+
 # median household income
 medhincome_08 = readxl::read_xls("../mhi_08.xls", range = "A13:B63",col_names = c("state","medhhinc08")) %>%
   clean_names() %>%
   mutate(state = state.abb[match(state,state.name)])
 medhincome_08$state[17] = "DC"
+medhincome_08$`income level_08` = 
+  ifelse(medhincome_08$medhhinc08 < 47242.68,"below average",
+         ifelse(medhincome_08$medhhinc08 < 58380.28, "middle income", "above average"))
+
 medhincome_13 = readxl::read_xls("../mhi_13.xls", range = "A11:B61",col_names = c("state","medhhinc13")) %>%
   clean_names() %>%
   mutate(state = state.abb[match(state,state.name)])
 medhincome_13$state[8] = "DC"
-medhincome_13$`income level` = 
+medhincome_13$`Income level` = 
   ifelse(medhincome_13$medhhinc13 < 47242.68,"below average",
          ifelse(medhincome_13$medhhinc13 < 58380.28, "middle income", "above average"))
 medhincome = merge(medhincome_08, medhincome_13,by=c("state"))
@@ -307,61 +316,20 @@ poverty_health %>%
 ```
 It seems that data are clustered.  
 
-### Lunch Program in each state
+#### The relationship between diabetes rate and shool breakfast/lunch program participant propotion
+In the following section, these two relationships are analyzed:
+
+* The relationship between diabetes rate (2013) and average School Breakfast program (SBP) participation rate(%) (average between 2009 and 2015).
+* The relationship between diabetes rate (2013) and National School Lunch Program (NSLP) participation rate(%) (average between 2009 and 2015).
+
 ```{r}
-state_population = state[-52,] %>% 
-  gather(key = "year1", value = "population",
-         state_population_2009:state_population_2016) %>% 
-  mutate(year1 = str_replace(year1, "state_population_","")) %>% 
-  select(state, year1, population) %>% 
-  rename(state1 = state) %>% 
-  filter(!(year1 == "2010" | year1 == "2016"))
-
-#prepare dataset for lunch program
-lunch = state[-52,] %>% 
-  gather(key = "year", value = "lunch_participants", national_school_lunch_program_participants_fy_2009:national_school_lunch_program_participants_fy_2015) %>% 
-  mutate(year = str_replace(year, "national_school_lunch_program_participants_fy_", "")) %>% 
-  select(statefips, state, year, lunch_participants) %>% 
-  left_join(state_population, by = c("year" = "year1", "state" = "state1")) %>% 
-  mutate(lunch_proportion = lunch_participants/population)
-
-breakfast = state[-52,] %>% 
-  gather(key = "year", value = "breakfast_participants",
-         school_breakfast_program_participants_fy_2009:
-         school_breakfast_program_participants_fy_2015) %>% 
-  mutate(year = str_replace(year, "school_breakfast_program_participants_fy_",""),
-         breakfast_participants = as.numeric(breakfast_participants)) %>% 
-  select(statefips, state, year, breakfast_participants) %>% 
-  left_join(state_population, by = c("year" = "year1", "state" = "state1")) %>% 
-  mutate(breakfast_proportion = breakfast_participants/population)
-
-summer = state[-52,] %>% 
-  gather(key = "year", value = "summer_participants",
-         summer_food_particpants_fy_2009:
-         summer_food_participants_fy_2015) %>% 
-  mutate(year = str_replace(year, "summer_food_particpants_fy_","")) %>% 
-  mutate(year = str_replace(year, "summer_food_participants_fy_","")) %>% 
-  select(statefips, state, year, summer_participants) %>% 
-  left_join(state_population, by = c("year" = "year1", "state" = "state1")) %>% 
-  mutate(summer_proportion = summer_participants/population)
-```
-
-### The relationship between lunch program and diabetes
-```{r}
-lunch_spread = lunch %>% 
-  select(-lunch_participants,-population,-state) %>% 
-  rename(year1 = year, statefips1 = statefips) %>% 
-  spread(key = "year1", value = "lunch_proportion")
-
-breakfast_spread = breakfast %>% 
-  select(-breakfast_participants,-population,-state) %>% 
-  rename(year1 = year, statefips1 = statefips) %>% 
-  spread(key = "year1", value = "breakfast_proportion")
-
-summer_spread = summer %>% 
-  select(-summer_participants,-population,-state) %>% 
-  rename(year1 = year, statefips1 = statefips) %>% 
-  spread(key = "year1", value = "summer_proportion")
+participation_rate = assistance %>% 
+  group_by(state) %>% 
+  mutate(`School Lunch Program` = mean(pct_nslp09, na.rm = T) + mean(pct_nslp15, na.rm = T)) %>% 
+  mutate(`School Breakfast Program` = mean(pct_sbp09, na.rm = T) + mean(pct_sbp15, na.rm = T)) %>% 
+  ungroup(state) %>% 
+  select(state,`School Lunch Program`,`School Breakfast Program`) %>% 
+  filter(!(duplicated(state)))
 
 health_13 = health %>% 
   group_by(state) %>% 
@@ -370,27 +338,31 @@ health_13 = health %>%
   mutate(statefips = str_sub(fips, 1, 2))%>% 
   filter(!duplicated(state)) %>% 
   ungroup(state) %>%
-  select(statefips, state, diabetes_13, obesites_13) %>% 
-  left_join(lunch_spread[,c(1,5)], by = c("statefips" = "statefips1")) %>% 
-  rename("lunch" = `2013`) %>% 
-  left_join(breakfast_spread[,c(1,5)], by = c("statefips" = "statefips1")) %>% 
-  rename("breakfast" = `2013`) %>% 
-  left_join(summer_spread[,c(1,5)], by = c("statefips" = "statefips1")) %>% 
-  rename("summer" = `2013`) %>% 
+  select(state, diabetes_13, obesites_13) %>% 
+  left_join(participation_rate, by = "state") %>% 
   left_join(medhincome_13, by = "state") %>% 
-  gather(key = "program", value = "participants proportion", lunch:summer)
+  gather(key = "program", value = "participant proportion", `School Lunch Program`:`School Breakfast Program`)
 
-#linear regression: diabetes_13 v.s. lunch participants (2013)
-#diabetes_13 = 22.991 + 5.235*ln(lunch_participants_proportion)
-#diabetes_13 = e^(22.991)*(e(5.235))^(lunch_participants_proportion )
-ggplot(health_13,aes(x = log(`participants proportion`), y = diabetes_13)) +
-  geom_point(aes(color = `income level`)) +
+#linear regression of diabetes rate and school breakfast/lunch program
+broom::tidy(lm(diabetes_13~`participant proportion`, data = health_13[c(1:51),]))
+broom::tidy(lm(diabetes_13~`participant proportion`, data = health_13[c(52:102),]))
+
+#scatter plots of the relationship
+ggplot(health_13,aes(x = `participant proportion`, y = diabetes_13)) +
+  geom_point(aes(color = `Income level`)) +
   geom_smooth(method = "lm",formula = y~x) +
-  coord_cartesian(xlim = c(-6, -2)) +
-  labs(title = "Diabetes Rate ~ ln(partic-2pation rate)",
-    x = "",
-    y = "Diabetes Rate") +
+  labs(title = "Diabetes Rate vs. Program Participant",
+    x = "Participant Proportion(%)",
+    y = "Diabetes Rate(%)") +
   theme(text = element_text(size = 15),
         legend.position = "bottom") +
-  facet_grid(. ~program)
+  facet_grid(. ~program, scales = "free")
 ```
+
+Note: the "Income level" refers to the level median household income of each state. "Above average" income level is defined as median household income above 75% quantile of all the states. "Below average" income level is defined as median household income below 25% quantile of all the states. "Middle" income is between 25% quantile and 75% quantile.
+
+**Analysis**
+
+The linear relationship between diabetes rate (2013) and average SBP participant proportion or average NSLP participant proportion are both significant with adjusted $R^{2}$ of 38.75% and 24.46% respectively. The results indicate that there is a positive relationship. However, it may be confounded by social and economic status.
+
+From the scatter plot, we can see that most states with below average median household income (green dots) are above the regression line and most states with above average household income (red dots) are below the line. Therefore, income level may differ the relationship between participant proportion and diabetes rate. In those states with lower average household income, for every unit increase in participant proportion, the expected increase in diabetes rate may be higher than states with higher household income.
