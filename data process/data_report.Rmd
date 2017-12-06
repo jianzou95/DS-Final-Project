@@ -32,7 +32,7 @@ Diabetes is a chronic disease whose prevalence has increased rapidly in the past
 
 In the U.S., the data of 2015 shows that 7.2% of the population are diagnosed with Diabetes(CDC, 2017). In 2013, it ranked as the seventh leading cause of  death in the nation (CDC). Previous studies identified obesity as the main risk factor of  type 2 diabetes (which account for 95% cases of diabetes in the U.S.)(Smyth & Heron, 2006). Meanwhile,  consumption of artificial sweetened beverage(Koning et al, 2011) and  prenatal exposure to famine under certain circumstances(Lumey, Khalangot & Vaiserman, 2015) are both related to the increased prevalence of type 2 diabetes. The report from CDC also demonstrates that there are certain association between socioeconomic status and the prevalence(CDC, 2017). 
 
-Inspiring by these findings which are all somehow related to food accessibility, we want to explore the association between food related factors, including â€¦â€?, and the prevalence of diabetes in the US. Over the course of the exploration of the data, we further want to build a model to explain the relationship between food related factors and the prevalence of Diabetes.
+Inspiring by these findings which are all somehow related to food accessibility, we want to explore the association between food related factors, such as number of restaurants, and the prevalence of diabetes in the US. Over the course of the exploration of the data, we further want to build a model to explain the relationship between food related factors and the prevalence of Diabetes.
 
 ## Data and Method
 The dataset we would like to use is <B>Food Environment Atlas</B> which can be found on [data.gov](https://catalog.data.gov/dataset/food-environment-atlas-f4a22).The detailed description of the dataset can be found on the [Github page](https://github.com/jianzou95/DS-Final-Project/blob/master/archived_documentation_August2015.pdf) of the project The dataset describes food environment factors of each state, including:  
@@ -53,11 +53,6 @@ health =
   clean_names() %>%
   select(1:7)
 
-socioeconomic = 
-  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'SOCIOECONOMIC') %>%
-  clean_names() %>%
-  select(1:3, 10:18)
-
 assistance = 
   readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'ASSISTANCE') %>%
   clean_names() %>%
@@ -67,15 +62,6 @@ restaurant =
   readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'RESTAURANTS') %>%
   clean_names() %>%
   select(1:9, 16:17)
-
-county =
-  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'Supplemental Data - County') %>%
-  clean_names()
-
-state =
-  readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'Supplemental Data - State') %>%
-  clean_names() %>%
-  select(1:2, 9:20, 27:40)
 
 store = 
   readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'STORES') %>%
@@ -175,24 +161,119 @@ require(gridExtra)
 relation_2008 = 
   health %>%
   ggplot() +
-  geom_point(aes(x = pct_obese_adults08, y = pct_diabetes_adults08), color="#56B4E9")+
-  geom_smooth(aes(x = pct_obese_adults08, y = pct_diabetes_adults08), color="#56B4E9", method = 'lm') +
-  labs(title = 'Obesity and Diabetes relation in 2008',
+  geom_point(aes(x = pct_obese_adults08, y = pct_diabetes_adults08), color="#56B4E9", alpha = 0.5)+
+  geom_smooth(aes(x = pct_obese_adults08, y = pct_diabetes_adults08), color="#0072B2", method = 'lm') +
+  labs(title = 'Relation in 2008',
        x = 'obesity percentage',
        y = 'diabetes percentage')
 
 relation_2013 = 
   health %>%
   ggplot() +
-  geom_point(aes(x = pct_obese_adults13, y = pct_diabetes_adults13), color="#D55E00")+
+  geom_point(aes(x = pct_obese_adults13, y = pct_diabetes_adults13), color="#F78725", alpha = 0.5)+
   geom_smooth(aes(x = pct_obese_adults13, y = pct_diabetes_adults13), color="#D55E00", method = 'lm') +
-  labs(title = 'Obesity and Diabetes relation in 2013',
+  labs(title = 'Relation in 2013',
        x = 'obesity percentage',
        y = 'diabetes percentage')
 grid.arrange(relation_2008, relation_2013, ncol=2)
 
 lm(pct_diabetes_adults08~pct_obese_adults08, data = health) %>% summary()
 lm(pct_diabetes_adults13~pct_obese_adults13, data = health) %>% summary()
+```
+
+### The relationship between diabetes rate and socialeconomics status
+```{r scioeconomic_diabetes}
+diabetes = health %>%
+  group_by(state) %>%
+  summarise(pct_08 = mean(pct_diabetes_adults08),
+            pct_13 = mean(pct_diabetes_adults13)) %>%
+  gather(key = year, value = pct_diabetes_adults, pct_08:pct_13)%>%
+  separate(year, into = c("remove", "year"), sep = "_") %>%
+  select(-remove)
+
+obese = health %>%
+  group_by(state) %>%
+  summarise(pct_08 = mean(pct_obese_adults08),
+            pct_13 = mean(pct_obese_adults13)) %>%
+  gather(key = year, value = pct_obese_adults, pct_08:pct_13)%>%
+  separate(year, into = c("remove", "year"), sep = "_") %>%
+  select(-remove)
+
+health_status = merge(diabetes, obese, by=c("state", "year"))
+
+income = medhincome %>%
+  select(-`income level`) %>%
+  gather(key = year, value = medhhinc, medhhinc08:medhhinc13)%>%
+  separate(year, into = c("remove", "year"), sep = -3) %>%
+  select(-remove)
+
+eco_health = merge(health_status, income, by=c("state", "year"))
+
+eco_health %>%
+  group_by(year) %>%
+  ggplot(aes(x = medhhinc, y = pct_diabetes_adults)) +
+  geom_point(aes(color = year), size = 3, alpha = .8) +
+  geom_smooth(se = FALSE) + 
+  facet_grid(. ~ year) +
+  labs(title = "Median household income and adult diabetes rate relationship",
+    x = "Median household income(Dollars)",
+    y = "Percentage of adult diabetes")  
+
+summary(eco_health %>% 
+          filter(year == "13", medhhinc < 60000) %>%
+          lm(pct_diabetes_adults ~ medhhinc, data = .))
+
+summary(eco_health %>% 
+          filter(year == "13", medhhinc >= 60000) %>%
+          lm(pct_diabetes_adults ~ medhhinc, data = .))
+```
+
+Scatterplots are made to show the association between median household income and adult diabetes rate in the U.S. in both 2008 and 2013.  Overall, we can observe that  the adult diabetes rate increased from 08 to 13. Comparing the two plots, we can observe a similar pattern: when the median household income is below 60,000 dollars, there is a decreasing trend; when the median household income is above 60,000 dollars, there is an increasing trend. 
+
+Two separate linear models are fitted regarding the 60,000 dollars threshold for 2013¡¯s data.  The one for below 60,000 dollars is proved to be significant, with a r-square value of 0. 58, indicating that 58% variation in the adult diabetes rate can be explained by the median household income. However, there is not statistical significant linear relationship between diabetes rate and median household income when the income is above 60,000 dollars.
+
+
+### The relationship between diabetes rate and restaurant
+We would like to find out any association between obesity & diabetes and the information given by the ¡°restaurant¡± sheet in our dataset.  
+
+First, we tidy and combine our sheets and make the data present in the terms of state. The variables include: Adult diabetes rate in 2013, Adult Obesity rate in 2013, the number of Fast-food restaurants in 2014, the number of Fast-food restaurants per 1,000 population in  2014 and the Expenditures per capita of fast food in 2012.
+
+```{r restaurant_cleaning}
+compare = left_join(health, restaurant, by="fips")
+
+compare1 = compare %>%
+  group_by(state.x) %>%
+  summarize(pct_diabetes_adults13 = mean(pct_diabetes_adults13, na.rm = TRUE),
+            pct_obese_adults13 = mean(pct_obese_adults13, na.rm = TRUE),
+            ffr14 = sum(ffr14),
+            ffrpth14 = mean(ffrpth14),
+            pc_ffrsales12 = mean(pc_ffrsales12, na.rm = TRUE))
+```
+
+Then, we would like to fit a multiple linear regression model. Considering the fact that we have several predictors, we believe that the stepwise regression would give us the best result. The response variable would be the ¡°Adult diabetes rate in 2013¡±.
+
+After running stepwise regression, the remaining variable were ¡°the number of Fast-food restaurants per 1,000 population in  2014¡± and the ¡°Expenditures per capita of fast food in 2012¡±. The detailed is shown in the `code` part.
+
+```{r restaurant_lm}
+mult.fit <- lm(pct_diabetes_adults13 ~ ffr14 + ffrpth14 + pc_ffrsales12, data=compare1)
+step(mult.fit, direction='both')
+
+lm(pct_diabetes_adults13 ~ ffrpth14 + pc_ffrsales12, data=compare1) %>% summary()
+```
+
+From the summary, we found that the global as well as the two parameters¡¯  p-value is less than 0.05 and the adjusted r-squared value is approximately 0.11. Therefore, we believe that there¡¯s a significant linear relationship. Unfortunately, the relation is not strong.
+
+Thus, the best fitted model would be: 
+$$Y_{i, diabetes rate} = 10.35 - 5.27 \cdot X_{ffrpth14} + 0.006 \cdot X_{pcffrsales12}$$
+
+Scatter plot for this model is below:
+```{r restaurant_scatter}
+p <- plot_ly(compare1, x = ~ffrpth14, y = ~pc_ffrsales12, z = ~pct_diabetes_adults13, size = ~pct_diabetes_adults13, sizes = c(50, 200),color = ~pct_diabetes_adults13, colors = c('#BF382A', '#0C4B8E')) %>%
+  add_markers(text = compare1$state.x) %>%
+  layout(scene = list(xaxis = list(title = 'Restaurants per 1000 population'),
+                     yaxis = list(title = 'Expenditures per capita'),
+                     zaxis = list(title = 'adults diabetes rates in 2013')))
+p
 ```
 
 ### The relationship between diabetes rate and school breakfast/lunch program participant propotion
@@ -232,8 +313,7 @@ ggplot(health_13,aes(x = `participant proportion`, y = diabetes_13)) +
   labs(title = "Diabetes Rate vs. Program Participant",
     x = "Participant Proportion(%)",
     y = "Diabetes Rate(%)") +
-  theme(text = element_text(size = 15),
-        legend.position = "bottom") +
+  theme(legend.position = "bottom") +
   facet_grid(. ~program, scales = "free")
 ```  
 
