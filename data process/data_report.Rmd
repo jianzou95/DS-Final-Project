@@ -32,7 +32,7 @@ Diabetes is a chronic disease whose prevalence has increased rapidly in the past
 
 In the U.S., the data of 2015 shows that 7.2% of the population are diagnosed with Diabetes(CDC, 2017). In 2013, it ranked as the seventh leading cause of  death in the nation (CDC). Previous studies identified obesity as the main risk factor of  type 2 diabetes (which account for 95% cases of diabetes in the U.S.)(Smyth & Heron, 2006). Meanwhile,  consumption of artificial sweetened beverage(Koning et al, 2011) and  prenatal exposure to famine under certain circumstances(Lumey, Khalangot & Vaiserman, 2015) are both related to the increased prevalence of type 2 diabetes. The report from CDC also demonstrates that there are certain association between socioeconomic status and the prevalence(CDC, 2017). 
 
-Inspiring by these findings which are all somehow related to food accessibility, we want to explore the association between food related factors, including â€¦â€¦, and the prevalence of diabetes in the US. Over the course of the exploration of the data, we further want to build a model to explain the relationship between food related factors and the prevalence of Diabetes.
+Inspiring by these findings which are all somehow related to food accessibility, we want to explore the association between food related factors, including â€¦â€?, and the prevalence of diabetes in the US. Over the course of the exploration of the data, we further want to build a model to explain the relationship between food related factors and the prevalence of Diabetes.
 
 ## Data and Method
 The dataset we would like to use is <B>Food Environment Atlas</B> which can be found on [data.gov](https://catalog.data.gov/dataset/food-environment-atlas-f4a22).The detailed description of the dataset can be found on the [Github page](https://github.com/jianzou95/DS-Final-Project/blob/master/archived_documentation_August2015.pdf) of the project The dataset describes food environment factors of each state, including:  
@@ -61,7 +61,7 @@ socioeconomic =
 assistance = 
   readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'ASSISTANCE') %>%
   clean_names() %>%
-  select(1:3, 23:29)
+  select(1:3, 23:24, 30:31)
 
 restaurant = 
   readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'RESTAURANTS') %>%
@@ -177,7 +177,7 @@ relation_2008 =
   ggplot() +
   geom_point(aes(x = pct_obese_adults08, y = pct_diabetes_adults08), color="#56B4E9")+
   geom_smooth(aes(x = pct_obese_adults08, y = pct_diabetes_adults08), color="#56B4E9", method = 'lm') +
-  labs(title = 'Relationship between the obesity and diabetes rate in 2008',
+  labs(title = 'Obesity and Diabetes relation in 2008',
        x = 'obesity percentage',
        y = 'diabetes percentage')
 
@@ -186,7 +186,7 @@ relation_2013 =
   ggplot() +
   geom_point(aes(x = pct_obese_adults13, y = pct_diabetes_adults13), color="#D55E00")+
   geom_smooth(aes(x = pct_obese_adults13, y = pct_diabetes_adults13), color="#D55E00", method = 'lm') +
-  labs(title = 'Relationship between the obesity and diabetes rate in 2013',
+  labs(title = 'Obesity and Diabetes relation in 2013',
        x = 'obesity percentage',
        y = 'diabetes percentage')
 grid.arrange(relation_2008, relation_2013, ncol=2)
@@ -194,6 +194,54 @@ grid.arrange(relation_2008, relation_2013, ncol=2)
 lm(pct_diabetes_adults08~pct_obese_adults08, data = health) %>% summary()
 lm(pct_diabetes_adults13~pct_obese_adults13, data = health) %>% summary()
 ```
+
+### The relationship between diabetes rate and school breakfast/lunch program participant propotion
+
+In the following section, these two relationships are analyzed:
+
+* The relationship between diabetes rate (2013) and average School Breakfast program (SBP) participation rate(%) (average between 2009 and 2015).
+* The relationship between diabetes rate (2013) and National School Lunch Program (NSLP) participation rate(%) (average between 2009 and 2015).
+```{r diabetes_SBP_relation}
+participation_rate = assistance %>% 
+  group_by(state) %>% 
+  mutate(`School Lunch Program` = mean(pct_nslp09, na.rm = T) + mean(pct_nslp15, na.rm = T)) %>% 
+  mutate(`School Breakfast Program` = mean(pct_sbp09, na.rm = T) + mean(pct_sbp15, na.rm = T)) %>% 
+  ungroup(state) %>% 
+  select(state,`School Lunch Program`,`School Breakfast Program`) %>% 
+  filter(!(duplicated(state)))
+
+health_13 = health %>% 
+  group_by(state) %>% 
+  mutate(diabetes_13 = mean(pct_diabetes_adults13, na.rm = T),
+         obesites_13 = mean(pct_obese_adults13, na.rm = T)) %>% 
+  mutate(statefips = str_sub(fips, 1, 2))%>% 
+  filter(!duplicated(state)) %>% 
+  ungroup(state) %>%
+  select(state, diabetes_13, obesites_13) %>% 
+  left_join(participation_rate, by = "state") %>% 
+  left_join(medhincome_13, by = "state") %>% 
+  gather(key = "program", value = "participant proportion", `School Lunch Program`:`School Breakfast Program`)
+
+#linear regression of diabetes rate and school breakfast/lunch program
+broom::tidy(lm(diabetes_13~`participant proportion`, data = health_13[c(1:51),]))
+broom::tidy(lm(diabetes_13~`participant proportion`, data = health_13[c(52:102),]))
+
+ggplot(health_13,aes(x = `participant proportion`, y = diabetes_13)) +
+  geom_point(aes(color = `income level`)) +
+  geom_smooth(method = "lm",formula = y~x) +
+  labs(title = "Diabetes Rate vs. Program Participant",
+    x = "Participant Proportion(%)",
+    y = "Diabetes Rate(%)") +
+  theme(text = element_text(size = 15),
+        legend.position = "bottom") +
+  facet_grid(. ~program, scales = "free")
+```  
+
+**Note:** the ¡°Income level¡± refers to the level median household income of each state. ¡°Above average¡± income level is defined as median household income above 75% quantile of all the states. ¡°Below average¡± income level is defined as median household income below 25% quantile of all the states. ¡°Middle¡± income is between 25% quantile and 75% quantile.
+
+**Analysis:** The linear relationship between diabetes rate (2013) and average SBP participant proportion or average NSLP participant proportion are both significant with adjusted $R^{2}$ of 38.75% and 24.46% respectively. The results indicate that there is a positive relationship. However, it may be confounded by social and economic status.
+
+From the scatter plot, we can see that most states with below average median household income (green dots) are above the regression line and most states with above average household income (red dots) are below the line. Therefore, income level may differ the relationship between participant proportion and diabetes rate. In those states with lower average household income, for every unit increase in participant proportion, the expected increase in diabetes rate may be higher than states with higher household income.
 
 
 ## Reference
@@ -203,7 +251,7 @@ lm(pct_diabetes_adults13~pct_obese_adults13, data = health) %>% summary()
 
 * Mokdad, Ali H., et al. "[The continuing epidemics of obesity and diabetes in the United States.]()" Jama 286.10 (2001): 1195-1200.
 
-* Nguyen, Ninh T., et al. "[Relationship between obesity and diabetes in a US adult population: findings from the National Health and Nutrition Examination Survey, 1999â€“2006.](https://link.springer.com/content/pdf/10.1007%2Fs11695-010-0335-4.pdf)" Obesity surgery 21.3 (2011): 351-355.
+* Nguyen, Ninh T., et al. "[Relationship between obesity and diabetes in a US adult population: findings from the National Health and Nutrition Examination Survey, 1999-2006.](https://link.springer.com/content/pdf/10.1007%2Fs11695-010-0335-4.pdf)" Obesity surgery 21.3 (2011): 351-355.
 
 * Smyth, Simon, and Andrew Heron. "[Diabetes and obesity: the twin epidemics.](https://www.nature.com/articles/nm0106-75)" Nature medicine 12.1 (2006): 75-80.
 
