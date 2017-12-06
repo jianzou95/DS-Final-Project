@@ -1,5 +1,5 @@
 ---
-title: "Health Status and Food Environment"
+title: "Diabetes Rate and Food Environment"
 author: "Shengnan Sun(ss5428), Shumin Rui(sr3461), Jian Zou(jz2924), Hsiang-Lun Kao(hk2968)"
 output: 
   html_document:
@@ -75,14 +75,16 @@ store =
 diab2009 =  readr::read_csv('../diabetes2009.csv') %>%
   clean_names() %>% 
   select(1:2) %>% 
-  mutate(state = state.abb[match(state,state.name)])
+  mutate(state = state.abb[match(state,state.name)],
+         year = "2009")
 diab2009$state[9] = "DC"
 
 #diabetes rate of each state in 2014
 diab2014 =  readr::read_csv('../diabetes2014.csv') %>%
   clean_names() %>% 
   select(1:2) %>% 
-  mutate(state = state.abb[match(state,state.name)])
+  mutate(state = state.abb[match(state,state.name)],
+         year = "2014")
 diab2014$state[9] = "DC"
 
 medhincome_08 = readxl::read_xls("../mhi_08.xls", range = "A13:B63",col_names = c("state","medhhinc08")) %>%
@@ -319,13 +321,12 @@ health_13 = health %>%
   left_join(medhincome_13, by = "state") %>% 
   gather(key = "program", value = "participant proportion", `School Lunch Program`:`School Breakfast Program`)
 
-#linear regression of diabetes rate and school breakfast/lunch program
-broom::tidy(lm(diabetes_13~`participant proportion`, data = health_13[c(1:51),]))
-broom::tidy(lm(diabetes_13~`participant proportion`, data = health_13[c(52:102),]))
-
 ggplot(health_13,aes(x = `participant proportion`, y = diabetes_13)) +
   geom_point(aes(color = `income level`)) +
   geom_smooth(method = "lm",formula = y~x) +
+     ggpmisc::stat_poly_eq(formula = y~x,
+            aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+            parse = TRUE) +
   labs(title = "Diabetes Rate vs. Program Participant",
     x = "Participant Proportion(%)",
     y = "Diabetes Rate(%)") +
@@ -335,11 +336,14 @@ ggplot(health_13,aes(x = `participant proportion`, y = diabetes_13)) +
 
 **Note:** the `Income level` refers to the level median household income of each state. `Above average` income level is defined as median household income above 75% quantile of all the states. `Below average` income level is defined as median household income below 25% quantile of all the states. `Middle` income is between 25% quantile and 75% quantile.
 
-The linear relationship between diabetes rate (2013) and average SBP participant proportion or average NSLP participant proportion are both significant with adjusted $R^{2}$ of 38.75% and 24.46% respectively. The results indicate that there is a positive relationship. However, it may be confounded by social and economic status.
+The linear relationship between diabetes rate (2013) and average SBP participant proportion or average NSLP participant proportion are both significant with adjusted $R^{2}$ of 40% and 26% respectively. The results indicate that there is a positive relationship. However, it may be confounded by social and economic status.
 
 From the scatter plot, we can see that most states with below average median household income (green dots) are above the regression line and most states with above average household income (red dots) are below the line. Therefore, income level may differ the relationship between participant proportion and diabetes rate. In those states with lower average household income, for every unit increase in participant proportion, the expected increase in diabetes rate may be higher than states with higher household income.
 
-#### The relationship between diabetes rate and the average supermarkets & grocery stores/1,000 residents.
+### The relationship between diabetes rate and the average supermarkets & grocery stores number/1,000 residents
+
+Do linear regression between diabetes rate within state and average number of supermarket & grocery store number/1000 residents in each state (average over each county) in 2009 and 2014. 
+
 ```{r average_stores}
 health_store = store %>% 
   group_by(state) %>% 
@@ -347,42 +351,34 @@ health_store = store %>%
          store_rate_2014 = mean(grocpth14, na.rm = T),
          store_mean = (store_rate_2009+store_rate_2014)/2) %>% 
   select(state,store_rate_2009,store_rate_2014,store_mean) %>% 
-  filter(!(duplicated(state))) %>% 
-  left_join(diab2009, by = "state") %>% 
-  rename(diabetes_2009 = percentage) %>% 
-  left_join(diab2014, by = "state") %>% 
-  rename(diabetes_2014 = percentage) %>% 
-  left_join(medhincome_13, by = "state")
+  filter(!(duplicated(state)))
 
-p1 = health_store %>% 
-ggplot(aes(x = store_rate_2009, y = diabetes_2009)) +
-  geom_point(aes(color = `income level`),alpha = .7) +
-  geom_smooth(method = "lm",formula = y~x) +
-  ggpmisc::stat_poly_eq(formula = y~x,
-               aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
-                parse = TRUE) +
-  coord_cartesian(xlim = c(0.15, 0.5)) +
-  labs(title = "",
-    x = "Average Store/1000 residents",
+health_store1 = health_store %>% 
+  select(-store_mean) %>% 
+  left_join(medhincome_13, by = "state") %>% 
+  gather(key = "year", value = "store_rate", store_rate_2009:store_rate_2014) %>% 
+  mutate(year = str_sub(year, -4, -1)) %>% 
+  left_join(rbind(diab2009,diab2014), by = c("state","year")) %>% 
+  ggplot(aes(x = store_rate, y = percentage)) +
+     geom_point(aes(color = `income level`), alpha = 0.7) +
+     geom_smooth(method = "lm", formula = y~x) +
+     ggpmisc::stat_poly_eq(formula = y~x,
+            aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+            parse = TRUE) +
+   coord_cartesian(xlim = c(0.15, 0.5)) +
+   labs(title = "",
+    x = "Average supermarket & grocery store/1000 residents",
     y = "Diabetes Rate(%)") +
-  theme(legend.position = "bottom") 
+    facet_grid(. ~ year)
 
-p2 = health_store %>% 
-ggplot(aes(x = store_rate_2014, y = diabetes_2014)) +
-  geom_point(aes(color = `income level`),alpha = .7) +
-  geom_smooth(method = "lm",formula = y~x) +
-  ggpmisc::stat_poly_eq(formula = y~x,
-               aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
-                parse = TRUE) +
-  coord_cartesian(xlim = c(0.15, 0.5)) +
-  labs(title = "",
-    x = "Average Store/1000 residents",
-    y = "Diabetes Rate(%)") +
-  theme(legend.position = "bottom") 
-
-cowplot::plot_grid(p1, p2, labels = c("2009","2014"))
+health_store1  
 ```
 
+**Note:** the `Income level` refers to the level median household income of each state. `Above average` income level is defined as median household income above 75% quantile of all the states. `Below average` income level is defined as median household income below 25% quantile of all the states. `Middle` income is between 25% quantile and 75% quantile.
+
+Overall, there is a negative linear relationship between diabetes rate and average number of supermarket & grocery stores/1000 residents with $R^2$ 0.22 and 0.3 respectively. The negative association is consistant with the negative relationship between diabetes rate and food accessibility. Lower accessibility to grocery stores and farmers' market is relateved to higher diabetes and obesitiy rate (Salois, 2012).
+
+States with below average household income are clustered at lower `average number of supermarke & grocery stores/1000 residents` and high `Diabetes Rate`, which is consistant with previous findings. In addition, obesity may be a confounder in the `diabetes rate vs. store number/1000 residents` relationship, since lower food accessibility are both correlated with diabetes and obesity.
 
 ## Discussion
 At the beginning of this project, we take a look at the diabetes and obesity data in 2008 and 2013. We find that there are strong relationship between diabetes and obesity, meanwhile, southeastern US has higher diabetes and obesity rates. Combining our tests and literature research, it is worth mentioning that national diabetes and obesity rates increase over decades.
@@ -399,9 +395,11 @@ We then try to compare the diabetes rate with other possible covariables. When t
 
 * Mathers, Colin D., and Dejan Loncar. "[Projections of global mortality and burden of disease from 2002 to 2030.](http://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.0030442)" PLoS medicine 3.11 (2006): e442.
 
-* Mokdad, Ali H., et al. "[The continuing epidemics of obesity and diabetes in the United States.]()" Jama 286.10 (2001): 1195-1200.
+* Mokdad, Ali H., et al. "The continuing epidemics of obesity and diabetes in the United States." Jama 286.10 (2001): 1195-1200.
 
 * Nguyen, Ninh T., et al. "[Relationship between obesity and diabetes in a US adult population: findings from the National Health and Nutrition Examination Survey, 1999-2006.](https://link.springer.com/content/pdf/10.1007%2Fs11695-010-0335-4.pdf)" Obesity surgery 21.3 (2011): 351-355.
+
+* Salois, Matthew J. "Obesity and diabetes, the built environment, and the ‘local’food economy in the United States, 2007." Economics & Human Biology 10.1 (2012): 35-42.
 
 * Smyth, Simon, and Andrew Heron. "[Diabetes and obesity: the twin epidemics.](https://www.nature.com/articles/nm0106-75)" Nature medicine 12.1 (2006): 75-80.
 
