@@ -7,10 +7,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
 
-Load the dataset we want.
-```{r}
 library(tidyverse)
 library(janitor)
 library(ggridges)
@@ -26,9 +23,8 @@ knitr::opts_chunk$set(fig.width=12, fig.height=8, out.width = "80%")
 theme_set(theme_bw())
 ```
 
-
 First we import the data and clean it.
-```{r}
+```{r load_data}
 health = 
   readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'HEALTH') %>%
   clean_names() %>%
@@ -73,9 +69,6 @@ medhincome_08 = readxl::read_xls("../mhi_08.xls", range = "A13:B63",col_names = 
   clean_names() %>%
   mutate(state = state.abb[match(state,state.name)])
 medhincome_08$state[17] = "DC"
-medhincome_08$`income level_08` = 
-  ifelse(medhincome_08$medhhinc08 < 47242.68,"below average",
-         ifelse(medhincome_08$medhhinc08 < 58380.28, "middle income", "above average"))
 
 medhincome_13 = readxl::read_xls("../mhi_13.xls", range = "A11:B61",col_names = c("state","medhhinc13")) %>%
   clean_names() %>%
@@ -212,6 +205,7 @@ obese = health %>%
 health_status = merge(diabetes, obese, by=c("state", "year"))
 
 income = medhincome %>%
+  select(-`Income level`) %>%
   gather(key = year, value = medhhinc, medhhinc08:medhhinc13)%>%
   separate(year, into = c("remove", "year"), sep = -3) %>%
   select(-remove)
@@ -221,7 +215,6 @@ eco_health = merge(health_status, income, by=c("state", "year"))
 
 
 ```{r}
-# plots
 # income VS obesity
 eco_health %>%
   group_by(year) %>%
@@ -229,13 +222,15 @@ eco_health %>%
   geom_point(aes(color = year), size = 3, alpha = .8) +
   geom_smooth(se = FALSE) + 
   facet_grid(. ~ year) +
-  labs(
-    x = "Median household income",
+  labs( title = "The Association between Median household income and adult obesity rate",
+    x = "Median household income(Dollars)",
     y = "Percentage of adult obesity")  +  
-  theme(text = element_text(size = 16), 
-        axis.text.x = element_text(size = 14), 
-        axis.text.y = element_text(size = 14))
+  theme(text = element_text(size = 18), 
+        axis.text.x = element_text(size = 16), 
+        axis.text.y = element_text(size = 16))
+```
 
+```{r}
 # income VS diabetes
 eco_health %>%
   group_by(year) %>%
@@ -243,15 +238,24 @@ eco_health %>%
   geom_point(aes(color = year), size = 3, alpha = .8) +
   geom_smooth(se = FALSE) + 
   facet_grid(. ~ year) +
-  labs(
-    x = "Median household income",
-    y = "Percentage of adult obesity")  +  
-  theme(text = element_text(size = 16), 
-        axis.text.x = element_text(size = 14), 
-        axis.text.y = element_text(size = 14))
-
+  labs(title = "The Association between Median household income and adult diabetes rate",
+    x = "Median household income(Dollars)",
+    y = "Percentage of adult diabetes")  +  
+  theme(text = element_text(size = 18), 
+        axis.text.x = element_text(size = 16), 
+        axis.text.y = element_text(size = 16))
 ```
 
+```{r}
+# fit linear model by segment, cutoff = 60000 dollars
+summary(eco_health %>% 
+          filter(medhhinc < 60000) %>%
+          lm(pct_diabetes_adults ~ medhhinc, data = .))
+
+summary(eco_health %>% 
+          filter(medhhinc >= 60000) %>%
+          lm(pct_diabetes_adults ~ medhhinc, data = .))
+```
 
 ### Health related figure
 * rate of diabetes increases

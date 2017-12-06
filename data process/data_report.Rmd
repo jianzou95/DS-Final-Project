@@ -32,7 +32,7 @@ Diabetes is a chronic disease whose prevalence has increased rapidly in the past
 
 In the U.S., the data of 2015 shows that 7.2% of the population are diagnosed with Diabetes(CDC, 2017). In 2013, it ranked as the seventh leading cause of  death in the nation (CDC). Previous studies identified obesity as the main risk factor of  type 2 diabetes (which account for 95% cases of diabetes in the U.S.)(Smyth & Heron, 2006). Meanwhile,  consumption of artificial sweetened beverage(Koning et al, 2011) and  prenatal exposure to famine under certain circumstances(Lumey, Khalangot & Vaiserman, 2015) are both related to the increased prevalence of type 2 diabetes. The report from CDC also demonstrates that there are certain association between socioeconomic status and the prevalence(CDC, 2017). 
 
-Inspiring by these findings which are all somehow related to food accessibility, we want to explore the association between food related factors, including ……, and the prevalence of diabetes in the US. Over the course of the exploration of the data, we further want to build a model to explain the relationship between food related factors and the prevalence of Diabetes.
+Inspiring by these findings which are all somehow related to food accessibility, we want to explore the association between food related factors, including ??????, and the prevalence of diabetes in the US. Over the course of the exploration of the data, we further want to build a model to explain the relationship between food related factors and the prevalence of Diabetes.
 
 ## Data and Method
 The dataset we would like to use is <B>Food Environment Atlas</B> which can be found on [data.gov](https://catalog.data.gov/dataset/food-environment-atlas-f4a22).
