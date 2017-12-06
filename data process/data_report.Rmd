@@ -457,8 +457,15 @@ After checking the model assumptions and influential values, we conclude that th
 ### Major Findings
 Most of our results (the association between diabetes rate and obesity, social-economic factors and food enviroment related factors) are conformed with previous studies. There is a strong association between diabetes and obesity and a strong association between diabetes and social-economic status. When the median household income is below 60,000 dollars, there is a decreasing trend between income and diabetes rate, while when the income is above, 60,000 dollars, the trend turns to be positive. As for the restaurant-related factors, combining the number of restaurants per 1000 population with the expenditures per capita on fast food, there is a linear relationship with diabetes rates. Surprisingly, there is a positive relationship between diabetes rate and National School Lunch Program/School Breakfast Program participation proportion, which is counterintuitive -- NSLP and SBP serve nutritious food to children and should negatively correlated with diabetes rate It may be because the association is confounded by other factors such as social-economic factors because children who are eligible for NSLP and SBP tend to come from families with low income. In addition, there is a negative association between diabetes rate and average supermarkets & grocery stores number/1,000 residents.
 
+Based on the result after exploring the one by one relationship betweent adult diabetes rate in the U.S. and each food environment related vairable, a final explanatory linear model is built as:
+$$Y_{diabetes\ rate} = 2.653 + 0.3958 \cdot X_{obe} - 0.00006 \cdot X_{MHI}- 0.06442 \cdot X_{LPPR} + 0.00337 \cdot X_{EFF} - 4.494 \cdot X_{store}$$
+As explained in the result section, this is a good model to capture the relashionship between food envirement factors and U.S. adult diabetes rate based on the adjusted $R^2$ value and the p value of each parameter. 
+
+
 ### Weaknesses
 We mostly used linear regression to detect the relationship, which is limited when exploring association with higher complexity. Even if we explored the relationship with several single factor and then combine them into a full model, the confounding effect has not been discussed in detail. In addition, the main dataset is incomplete with only data of diabetes rate in 2008 and 2013, which causes the limitation of our findings.
+
+The final model we construted is not a prediction model, but a explanatory model. This means we cannot using food environment factors to predict the U.S. adult diabetes rate. One main reason that we did not construt a prediction model is the mismatch of year for different variable. Moreover, since we did the analysis at the state level, some meaningful pattern at county level may be diluted as we simply even the variable among all the counties without considering the population in each county. With higher quility data, further study may try to build a more complex model to achieve the goal of prediction.  
 
 
 
