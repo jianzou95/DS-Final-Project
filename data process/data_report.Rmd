@@ -27,29 +27,26 @@ theme_set(theme_bw())
 theme_update(legend.position = "bottom")
 ```
 
-## Introduction
+## I. Introduction
 Diabetes is a chronic disease whose prevalence has increased rapidly in the past few decades. According to the report from WHO, in 2014, the prevalence of diabetes among adult population had risen from 4.7% to 8.5%  comparing to that in 1980 (WHO, 2016). It is projected as the seventh leading cause of mortality in 2030 (Mathers & Loncar, 2006).  
 
 In the U.S., the data of 2015 shows that 7.2% of the population are diagnosed with Diabetes(CDC, 2017). In 2013, it ranked as the seventh leading cause of death in the nation (CDC). Previous studies identified obesity as the main risk factor of type 2 diabetes (which account for 95% cases of diabetes in the U.S.)(Smyth & Heron, 2006). Meanwhile,  consumption of artificial sweetened beverage(Koning et al, 2011) and  prenatal exposure to famine under certain circumstances(Lumey, Khalangot & Vaiserman, 2015) are both related to the increased prevalence of type 2 diabetes. The report from CDC also demonstrates that there are certain association between socioeconomic status and the prevalence(CDC, 2017). 
 
-Inspiring by these findings which are all somehow related to food accessibility, we set the goal to explore the association between food related factors, including median household income, participation proportion of National School Lunch Program (NSLP)/School Breakfast Program (SBP), Fast-food restaurants availability, etc. and the prevalence of diabetes in the US. Over the course of the research, we further want to build a model to explain the relationship between food related factors and the prevalence of Diabetes.
+Inspiring by these findings which are all somehow related to food environment, we set the goal to explore the association between prevalence of diabetes in United States and food related factors, including median household income, participation proportion of National School Lunch Program (NSLP)/School Breakfast Program (SBP), average number of supermarket and grocery stores/1,000 residents, fast-food restaurants availability, etc. The research focuses on population scale where we explore the relationship between stately diabetes rate and multiple factors of the state. 
 
-## Data and Method
-The dataset we would like to use is <B>Food Environment Atlas</B> which can be found on [data.gov](https://catalog.data.gov/dataset/food-environment-atlas-f4a22).The detailed description of the dataset can be found on the [Github page](https://github.com/jianzou95/DS-Final-Project/blob/master/archived_documentation_August2015.pdf) of the project. The detailed description of the dataset can be found on the Github page of the project, named archived_documentation_August2015.pdf. The dataset contains several spreadsheets which provide information about population characteristics and food factors of each state at the county level.  Some main variables that we are interested in includ:
+## II. Data and Method
+The main dataset we use is <B>Food Environment Atlas</B> which can be found on [data.gov](https://catalog.data.gov/dataset/food-environment-atlas-f4a22).The detailed description of the dataset can be found on the [Github page](https://github.com/jianzou95/DS-Final-Project/blob/master/archived_documentation_August2015.pdf) of the project. The detailed description of the dataset can be found on the Github page of the project, named archived_documentation_August2015.pdf. The dataset contains several spreadsheets which provide information on population characteristics and food factors of each state at the county level, which are averaged to be at state level.Some main variables that we are interested in includ:
 
-* Adult diabetes and obesity rate in every countys in 2008 and 2013. They have been summarized into states by evening across counties.  
+* Adult diabetes and obesity rate in every county in 2008 and 2013. They have been summarized into states by evening across counties.  
 * Participation percentage of National School Lunch Program and School Breakfast Program in 2009 and 2014.
-* The number of Fast-food restaurants in 2014, the number of Fast-food restaurants per 1,000 population in  2014 and the Expenditures per capita of fast food in 2012. 
+* The number of fast-food restaurants in 2014, the number of Fast-food restaurants per 1,000 population in  2014 and the Expenditures per capita of fast food in 2012. 
 
 
-In addition to this main dataset, we also use another two dataset, <B>Median Household Income (In 2013 Inflation-adjusted Dollars)</B> by [State Ranked](https://www.census.gov/data/tables/2014/demo/income-poverty/p60-249.html) from Highest to Lowest Using 3-Year Average (2011-2013), and  <B>Median Household Income (In 2008 Inflation-adjusted Dollars)</B> by [State Ranked](https://www.census.gov/data/tables/2009/demo/income-poverty/p60-236.html.) from Highest to Lowest Using 3-Year Average: 2006-2008 from census.gov. 
+In addition to this main dataset, we also use another four datasets, <B>Median Household Income (In 2013 Inflation-adjusted Dollars)</B> by [State Ranked](https://www.census.gov/data/tables/2014/demo/income-poverty/p60-249.html) from Highest to Lowest Using 3-Year Average (2011-2013),  <B>Median Household Income (In 2008 Inflation-adjusted Dollars)</B> by [State Ranked](https://www.census.gov/data/tables/2009/demo/income-poverty/p60-236.html.) from Highest to Lowest Using 3-Year Average: 2006-2008 from census.gov., <stately diabetes rate in 2009 and 2014> by [Centers for Disease Control and Prevention](https://gis.cdc.gov/grasp/diabetes/DiabetesAtlas.html)
 
-The two median household income datasets contain the information of median household income of each state (50 states and DC) in 2008 and 2013 collected by U.S. Census Bureau. The income values are evened in a three-year-period (ie. 2006-2008 for 2008, and 2011-2013 for 2013) and adjusted for inflation. 
+The two median household income datasets contain the information of median household income of each state (50 states and DC) in 2008 and 2013 collected by U.S. Census Bureau. The income values are evened in a three-year-period (ie. 2006-2008 for 2008, and 2011-2013 for 2013) and adjusted for inflation. These two datasets have been merged into one dataframe based on states, and the names of states are converted to abbreviation in order to be compared with the rest dataframes.
 
-* These two datasets have been merged into one dataframe based on states, and the names of states are converted to abbreviation in order to be compared with the rest dataframes.
-
-All datasets are downloaded directly from the websites as Excel format. 
-
+All datasets are downloaded directly from the websites as Excel or CSV format. 
 ```{r data_import}
 health = 
   readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'HEALTH') %>%
@@ -103,11 +100,20 @@ medhincome_13$`income level` =
 medhincome = merge(medhincome_08, medhincome_13,by=c("state"))
 ```
  
-## Results
-We first provide a overview of the data about diabetes and obesity, then we link those health related data to other possible predictors, such as socioeconomic status, number of fast-food restaurants, National School Lunch Program (NSLP)/School Breakfast Program (SBP) and so on.
+## III. Results
 
-### National diabetes and obesity data in 2008 and 2013
-We first take a look at the distribution of diabetes and obesity in USA in 2013. Deeper color indicates higher rates of diabetes or obesity. Southeastern part has higher diabetes and obesity rates.  
+### Overview
+Considering the high correlation between diabetes and obesity, we first explore the association between the two factors. Then we explore the relationship between diabetes with other possible predictors, such as:
+
+* socioeconomic status
+* Number of fast-food restaurants
+* National School Lunch Program (NSLP)/School Breakfast Program (SBP)
+* number of supermarket & grocery stores/1,000 residents
+
+Linear regression is used in most models and a comprehensive multiple linear regression model was built.
+
+### Diabetes rate vs Obesity
+We first take a look at the distribution of diabetes and obesity in United States in 2013. In the following maps, deeper color represents higher rates of diabetes or obesity. The maps illustrates the uneven distribution of stately disease rate and the similar pattern between diabetes rate and obesity rate. Southeastern part has higher diabetes and obesity rates than other parts of the country. Colorado has both very low diabetes and obesities rate.
 ```{r map}
 health_map = 
   health %>%
@@ -148,7 +154,10 @@ layout(
   geo = geo_info
   )
 ```
-We then take a look at the distribution of diabetes and obesity nationally.Paired t-test results indicates that both diabetes and obesity rate significantlly increase from 2008 to 2013. This conclusion is consist with our literature research. Diabtes and obesity rates keep rising in the past decades in USA.(Mokdad A H, et al., 2001)
+
+We then take a look at the distribution of diabetes and obesity nationally. Paired t-test results indicates that both diabetes and obesity rate significantlly increase from 2008 () to 2013. This conclusion is consist with our 
+literature research. Diabtes and obesity rates keep rising in the past decades in USA.(Mokdad A H, et al., 2001)
+
 ```{r diabetes_obesities_overyear, warning = FALSE, message = FALSE}
 require(gridExtra)
 t_test_diabetes = 
@@ -156,23 +165,23 @@ t_test_diabetes =
   ggplot() +
   geom_density(aes(x = pct_obese_adults08), color = "#56B4E9", fill ="#56B4E9", alpha = .4) +
   geom_density(aes(x = pct_obese_adults13), color = "#D55E00",fill ="#D55E00", alpha = .4) +
-  labs(title = 'Obesity rate in 08 and 13',
-       x = 'rate of obesity')
+  labs(title = 'National obesity rate in 08 and 13',
+       x = 'rate of obesity(%)')
 
 t_test_obesity = 
   health %>%
   ggplot() +
   geom_density(aes(x = pct_diabetes_adults08), color = "#56B4E9", fill ="#56B4E9", alpha = .4) +
   geom_density(aes(x = pct_diabetes_adults13), color = "#D55E00",fill ="#D55E00", alpha = .4) +
-  labs(title = 'Diabetes rate in 08 and 13',
-       x = 'rate of diabetes')
+  labs(title = 'National obesites rate in 08 and 13',
+       x = 'rate of diabetes(%)')
 
 grid.arrange(t_test_diabetes, t_test_obesity, ncol=2)
 
 t.test(health$pct_obese_adults08, health$pct_obese_adults13, paired = TRUE) 
 t.test(health$pct_diabetes_adults08, health$pct_diabetes_adults13, paired = TRUE)
 ```
-Finding the similar distribution of diabetes and obesity, we continue to test the relationship between diabetes and obesity in 2008 and 2013 respectively. After the linear regression, we find that there are significant linear relationship between diabetes and obesity both in 2008 and 2013. Around 50% variation of diabetes could be explained by obesity. This conclusion is consistent with other national researches.(Nguyen, et al., 2011)
+Finding the similar distribution of diabetes and obesity, we continue to test the relationship between diabetes and obesity in 2008 and 2013 respectively. Using the linear regression, we find that there are significant linear relationship between diabetes and obesity both in 2008 and 2013, where about 50% of the relationship could be explained by the linear model. This conclusion is consistent with other researches.(Nguyen, et al., 2011)
 ```{r relationship_dibetes_obesity, message = FALSE, warning = FALSE}
 require(gridExtra)
 
@@ -199,7 +208,9 @@ lm(pct_diabetes_adults08~pct_obese_adults08, data = health) %>% summary()
 lm(pct_diabetes_adults13~pct_obese_adults13, data = health) %>% summary()
 ```
 
-### The relationship between diabetes rate and socialeconomics status
+### Diabetes rate vs Social-economics Status
+In this section, the relationship between diabetes and  social-economic status is explored.
+
 ```{r scioeconomic_diabetes}
 diabetes = health %>%
   group_by(state) %>%
@@ -246,15 +257,14 @@ summary(eco_health %>%
           lm(pct_diabetes_adults ~ medhhinc, data = .))
 ```
 
-Scatterplots are made to show the association between median household income and adult diabetes rate in the U.S. in both 2008 and 2013.  Overall, we can observe that  the adult diabetes rate increased from 08 to 13. Comparing the two plots, we can observe a similar pattern: when the median household income is below 60,000 dollars, there is a decreasing trend; when the median household income is above 60,000 dollars, there is an increasing trend. 
+Scatterplots are made to show the association between median household income and diabetes rate in the U.S. in both 2008 and 2013.  Overall, we can observe that the adult diabetes rate increased from 08 to 13, which matches the finding in the previous section. Comparing the two plots, we can observe a similar pattern: when the median household income is below 60,000 dollars, there is a decreasing trend; when the median household income is above 60,000 dollars, there is an increasing trend. 
 
-Two separate linear models are fitted regarding the 60,000 dollars threshold for 2013??s data.  The one for below 60,000 dollars is proved to be significant, with a $R^{2}$ of 0. 58, indicating that 58% variation in the adult diabetes rate can be explained by the median household income. However, there is not statistical significant linear relationship between diabetes rate and median household income when the income is above 60,000 dollars.
+Two separate linear models are fitted regarding the 60,000 dollars threshold for data in 2013.  The one for below 60,000 dollars is proved to be significant, with a $R^{2}$ of 0.58, indicating that 58% variation in the adult diabetes rate can be explained by the median household income. However, there is not statistical significant linear relationship between diabetes rate and median household income when the income is above 60,000 dollars. The result indicates that social-economic status may be a confounder to the relationship between diabetes and other factors.
 
+### Diabetes rate vs Fast Food Restaurant Related Factors
+Previous studies also showed the relationship between fast food consumption and social-economic status as well as obesity (Rosenheck, 2008). In the following section, we probe into the association between diabetes and fast food restaurant related factors.
 
-### The relationship between diabetes rate and restaurant
-We would like to find out any association between obesity & diabetes and the information given by the `restaurant` sheet in our dataset.  
-
-First, we tidy and combine our sheets and make the data present in the terms of state. The variables include: Adult diabetes rate in 2013, Adult Obesity rate in 2013, the number of Fast-food restaurants in 2014, the number of Fast-food restaurants per 1,000 population in  2014 and the Expenditures per capita of fast food in 2012.
+First, we tidy and combine our sheets and make the data present in the terms of state. The variables include: Adult diabetes rate in 2013, Adult Obesity rate in 2013, the number of Fast-food restaurants in 2014, the number of Fast-food restaurants per 1,000 population in 2014 and the Expenditures per capita of fast food in 2012.
 
 ```{r restaurant_cleaning}
 compare = left_join(health, restaurant, by="fips")
@@ -268,7 +278,7 @@ compare1 = compare %>%
             pc_ffrsales12 = mean(pc_ffrsales12, na.rm = TRUE))
 ```
 
-Then, we would like to fit a multiple linear regression model. Considering the fact that we have several predictors, we believe that the stepwise regression would give us the best result. The response variable would be the `Adult diabetes rate in 2013`.
+Then, we fit a multiple linear regression model with `Adult diabetes rate in 2013` as an outcome. Considering the fact that we have several predictors, we believe that the stepwise regression would give us the best result.
 
 After running stepwise regression, the remaining variable were `the number of Fast-food restaurants per 1,000 population in  2014` and the `Expenditures per capita of fast food in 2012`. The detailed is shown in the `code` part.
 
@@ -294,7 +304,7 @@ p <- plot_ly(compare1, x = ~ffrpth14, y = ~pc_ffrsales12, z = ~pct_diabetes_adul
 p
 ```
 
-### The relationship between diabetes rate and school breakfast/lunch program participant propotion
+### Diabetes Rate vs School Breakfast/Lunch Program Participant Propotion
 
 In the following section, these two relationships are analyzed:
 
@@ -334,15 +344,15 @@ ggplot(health_13,aes(x = `participant proportion`, y = diabetes_13)) +
   facet_grid(. ~program, scales = "free")
 ```  
 
-**Note:** the `Income level` refers to the level median household income of each state. `Above average` income level is defined as median household income above 75% quantile of all the states. `Below average` income level is defined as median household income below 25% quantile of all the states. `Middle` income is between 25% quantile and 75% quantile.
+**Note:** the `Income level` refers to the level of median household income of each state. `Above average` income level is defined as median household income above 75% quantile of all the states. `Below average` income level is defined as median household income below 25% quantile of all the states. `Middle` income is between 25% quantile and 75% quantile.
 
-The linear relationship between diabetes rate (2013) and average SBP participant proportion or average NSLP participant proportion are both significant with adjusted $R^{2}$ of 40% and 26% respectively. The results indicate that there is a positive relationship. However, it may be confounded by social and economic status.
+The linear relationship between diabetes rate (2013) and SBP/NSLP are both significant with adjusted $R^{2}$ of 40% and 26% respectively. The results indicate that there is a positive relationship. 
 
 From the scatter plot, we can see that most states with below average median household income (green dots) are above the regression line and most states with above average household income (red dots) are below the line. Therefore, income level may differ the relationship between participant proportion and diabetes rate. In those states with lower average household income, for every unit increase in participant proportion, the expected increase in diabetes rate may be higher than states with higher household income.
 
-### The relationship between diabetes rate and the average supermarkets & grocery stores number/1,000 residents
+### Diabetes Rate vs Average Supermarkets & Grocery Stores number/1,000 residents
 
-Do linear regression between diabetes rate within state and average number of supermarket & grocery store number/1000 residents in each state (average over each county) in 2009 and 2014. 
+Do linear regression between diabetes rate within state and average number of supermarket & grocery store number/1000 residents in each state (average over each county) in 2009 and 2014 (due to limit of data resource). 
 
 ```{r average_stores}
 health_store = store %>% 
@@ -380,7 +390,7 @@ Overall, there is a negative linear relationship between diabetes rate and avera
 
 States with below average household income are clustered at lower `average number of supermarke & grocery stores/1000 residents` and high `Diabetes Rate`, which is consistant with previous findings. In addition, obesity may be a confounder in the `diabetes rate vs. store number/1000 residents` relationship, since lower food accessibility are both correlated with diabetes and obesity.
 
-### A linear model that capture the overall association
+### A multiple linear model that capture the overall association
 After identifying the food related factors that may have certain relationship with adult diabetes prevalence, we decide to construct an explanatory linear model to capture the association as a whole. Since in previous section, we observed a strong linear association between median household income and adult diabetes rate when the income is below 60,000 dollars, we focus on building a model to explain the association between the covariates identified from previous sections and adult diabetes rate in this sub-population. 
 
 The variables we are interested in to build the model for adult diabetes rate at the state level include: 
@@ -441,16 +451,14 @@ check = influence.measures(best_fit)
 # plot(best_fit)
 ```
 
-After checking the model assumptions and influential values, we conclude that this model is a good one to capture the association. The adjust R square is 0.885,
-Indicating that 88.5% variation in adult obesity rate can be explained by this linear model. 
+After checking the model assumptions and influential values, we conclude that this model is a good one to capture the association. The adjusted $R^2$ is 0.885, indicating that 88.5% variation in adult obesity rate can be explained by this linear model. 
 
-## Discussion
-At the beginning of this project, we take a look at the diabetes and obesity data in 2008 and 2013. We find that there are strong relationship between diabetes and obesity, meanwhile, southeastern US has higher diabetes and obesity rates. Combining our tests and literature research, it is worth mentioning that national diabetes and obesity rates increase over decades.
+## IV. Discussion
+### Major Findings
+Most of our results (the association between diabetes rate and obesity, social-economic factors and food enviroment related factors) are conformed with previous studies. There is a strong association between diabetes and obesity and a strong association between diabetes and social-economic status. When the median household income is below 60,000 dollars, there is a decreasing trend between income and diabetes rate, while when the income is above, 60,000 dollars, the trend turns to be positive. As for the restaurant-related factors, combining the number of restaurants per 1000 population with the expenditures per capita on fast food, there is a linear relationship with diabetes rates. Surprisingly, there is a positive relationship between diabetes rate and National School Lunch Program/School Breakfast Program participation proportion, which is counterintuitive -- NSLP and SBP serve nutritious food to children and should negatively correlated with diabetes rate It may be because the association is confounded by other factors such as social-economic factors because children who are eligible for NSLP and SBP tend to come from families with low income. In addition, there is a negative association between diabetes rate and average supermarkets & grocery stores number/1,000 residents.
 
-We then try to compare the diabetes rate with other possible covariables. When the median household income is below 60,000 dollars, there is a decreasing trend between income and diabetes rate, while when the income is above, 60,000 dollars, the trend turns to be positive. As for the restaurant data, combining the number of restaurants per 1000 population with the expenditures per capita on fast food, there??s a linear relationship with diabetes rates. Surprisingly, there is a positive relationship between diabetes rate and National School Lunch Program/School Breakfast Program participation proportion, which is counterintuitive -- NSLP and SBP serve nutritious food to children and should negatively correlated with diabetes rate It may be because the association is confounded by other factors such as social-economic factors because children who are eligible for NSLP and SBP tend to come from families with low income. 
-
-
-
+### Weaknesses
+We mostly used linear regression to detect the relationship, which is limited when exploring association with higher complexity. Even if we explored the relationship with several single factor and then combine them into a full model, the confounding effect has not been discussed in detail. In addition, the main dataset is incomplete with only data of diabetes rate in 2008 and 2013, which causes the limitation of our findings.
 
 
 
@@ -462,6 +470,8 @@ We then try to compare the diabetes rate with other possible covariables. When t
 * Mokdad, Ali H., et al. "The continuing epidemics of obesity and diabetes in the United States." Jama 286.10 (2001): 1195-1200.
 
 * Nguyen, Ninh T., et al. "[Relationship between obesity and diabetes in a US adult population: findings from the National Health and Nutrition Examination Survey, 1999-2006.](https://link.springer.com/content/pdf/10.1007%2Fs11695-010-0335-4.pdf)" Obesity surgery 21.3 (2011): 351-355.
+
+* Rosenheck, Robert. "Fast food consumption and increased caloric intake: a systematic review of a trajectory towards weight gain and obesity risk." Obesity Reviews 9.6 (2008): 535-547.
 
 * Salois, Matthew J. "Obesity and diabetes, the built environment, and the ???local???food economy in the United States, 2007." Economics & Human Biology 10.1 (2012): 35-42.
 
