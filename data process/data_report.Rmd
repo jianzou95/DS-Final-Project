@@ -32,12 +32,21 @@ Diabetes is a chronic disease whose prevalence has increased rapidly in the past
 
 In the U.S., the data of 2015 shows that 7.2% of the population are diagnosed with Diabetes(CDC, 2017). In 2013, it ranked as the seventh leading cause of  death in the nation (CDC). Previous studies identified obesity as the main risk factor of  type 2 diabetes (which account for 95% cases of diabetes in the U.S.)(Smyth & Heron, 2006). Meanwhile,  consumption of artificial sweetened beverage(Koning et al, 2011) and  prenatal exposure to famine under certain circumstances(Lumey, Khalangot & Vaiserman, 2015) are both related to the increased prevalence of type 2 diabetes. The report from CDC also demonstrates that there are certain association between socioeconomic status and the prevalence(CDC, 2017). 
 
-Inspiring by these findings which are all somehow related to food accessibility, we want to explore the association between food related factors, including ??????, and the prevalence of diabetes in the US. Over the course of the exploration of the data, we further want to build a model to explain the relationship between food related factors and the prevalence of Diabetes.
+Inspiring by these findings which are all somehow related to food accessibility, we want to explore the association between food related factors, including ……, and the prevalence of diabetes in the US. Over the course of the exploration of the data, we further want to build a model to explain the relationship between food related factors and the prevalence of Diabetes.
 
 ## Data and Method
-The dataset we would like to use is <B>Food Environment Atlas</B> which can be found on [data.gov](https://catalog.data.gov/dataset/food-environment-atlas-f4a22).
+The dataset we would like to use is <B>Food Environment Atlas</B> which can be found on [data.gov](https://catalog.data.gov/dataset/food-environment-atlas-f4a22).The detailed description of the dataset can be found on the [Github page](https://github.com/jianzou95/DS-Final-Project/blob/master/archived_documentation_August2015.pdf) of the project The dataset describes food environment factors of each state, including:  
 
-In addition to this main dataset, we also use another two dataset, <B>Median Household Income (In 2013 Inflation-adjusted Dollars)</B>by [State Ranked](https://www.census.gov/data/tables/2014/demo/income-poverty/p60-249.html) from Highest to Lowest Using 3-Year Average (2011-2013), and  <B>Median Household Income (In 2008 Inflation-adjusted Dollars)</B> by [State Ranked](https://www.census.gov/data/tables/2009/demo/income-poverty/p60-236.html.) from Highest to Lowest Using 3-Year Average: 2006-2008 from census.gov. 
+* Rate of diabetes and obesity in every counties in 2008 and 2013.
+* Participation percentage of National School Lunch Program and School Breakfast Program.
+
+
+In addition to this main dataset, we also use another two dataset, <B>Median Household Income (In 2013 Inflation-adjusted Dollars)</B> by [State Ranked](https://www.census.gov/data/tables/2014/demo/income-poverty/p60-249.html) from Highest to Lowest Using 3-Year Average (2011-2013), and  <B>Median Household Income (In 2008 Inflation-adjusted Dollars)</B> by [State Ranked](https://www.census.gov/data/tables/2009/demo/income-poverty/p60-236.html.) from Highest to Lowest Using 3-Year Average: 2006-2008 from census.gov. 
+
+The two median household income datasets contain the information of median household income of each state (50 states and DC) in 2008 and 2013 collected by U.S. Census Bureau. The income values are evened in a three-year-period (ie. 2006-2008 for 2008, and 2011-2013 for 2013) and adjusted for inflation. 
+
+All datasets are downloaded directly from the websites as Excel format. 
+
 ```{r data_import}
 health = 
   readxl::read_xls('../food_enviroment_atlas.xls', sheet = 'HEALTH') %>%
@@ -91,8 +100,10 @@ medhincome = merge(medhincome_08, medhincome_13,by=c("state"))
 ```
  
 ## Results
+We first provide a overview of the data about diabetes and obesity, then we link those health related data to other possible predictors, such as socioeconomic status, number of fast-food restaurants, National School Lunch Program (NSLP)/School Breakfast Program (SBP) and so on.
+
 ### National diabetes and obesity data in 2008 and 2013
-We first take a look at the distribution of diabetes and obesity in USA in 2013. Deeper color indicates higher rates of diabetes or obesity. Southeastern part has higher diabetes and obesity rates.
+We first take a look at the distribution of diabetes and obesity in USA in 2013. Deeper color indicates higher rates of diabetes or obesity. Southeastern part has higher diabetes and obesity rates.  
 ```{r map}
 health_map = 
   health %>%
@@ -154,7 +165,7 @@ t_test_obesity =
 
 grid.arrange(t_test_diabetes, t_test_obesity, ncol=2)
 
-t.test(health$pct_obese_adults08, health$pct_obese_adults13, paired = TRUE)
+t.test(health$pct_obese_adults08, health$pct_obese_adults13, paired = TRUE) 
 t.test(health$pct_diabetes_adults08, health$pct_diabetes_adults13, paired = TRUE)
 ```
 Finding the similar distribution of diabetes and obesity, we continue to test the relationship between diabetes and obesity in 2008 and 2013 respectively. After the linear regression, we find that there are significant linear relationship between diabetes and obesity both in 2008 and 2013. Around 50% variation of diabetes could be explained by obesity. This conclusion is consistent with other national researches.(Nguyen, et al., 2011)
@@ -183,3 +194,20 @@ grid.arrange(relation_2008, relation_2013, ncol=2)
 lm(pct_diabetes_adults08~pct_obese_adults08, data = health) %>% summary()
 lm(pct_diabetes_adults13~pct_obese_adults13, data = health) %>% summary()
 ```
+
+
+## Reference
+* Centers for Disease Control and Prevention. "[National diabetes statistics report: estimates of diabetes and its burden in the United States, 2017.](https://www.cdc.gov/diabetes/pdfs/data/statistics/national-diabetes-statistics-report.pdf)" Atlanta, GA: National Center for Chronic Disease Prevention and Health Promotion .
+
+* Mathers, Colin D., and Dejan Loncar. "[Projections of global mortality and burden of disease from 2002 to 2030.](http://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.0030442)" PLoS medicine 3.11 (2006): e442.
+
+* Mokdad, Ali H., et al. "[The continuing epidemics of obesity and diabetes in the United States.]()" Jama 286.10 (2001): 1195-1200.
+
+* Nguyen, Ninh T., et al. "[Relationship between obesity and diabetes in a US adult population: findings from the National Health and Nutrition Examination Survey, 1999–2006.](https://link.springer.com/content/pdf/10.1007%2Fs11695-010-0335-4.pdf)" Obesity surgery 21.3 (2011): 351-355.
+
+* Smyth, Simon, and Andrew Heron. "[Diabetes and obesity: the twin epidemics.](https://www.nature.com/articles/nm0106-75)" Nature medicine 12.1 (2006): 75-80.
+
+* World Health Organization. [Global report on diabetes](http://apps.who.int/iris/bitstream/10665/204871/1/9789241565257_eng.pdf?ua=1). World Health Organization, 2016.  
+
+
+
