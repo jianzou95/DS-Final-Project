@@ -401,3 +401,16 @@ lm(pct_diabetes_adults13 ~ ffrpth14 + pc_ffrsales12, data=compare1) %>% summary(
 ```{r}
 lm(pct_diabetes_adults13 ~ ffrpth14 + pc_ffrsales12, data=compare1) %>% plot()
 ```
+
+* Add a 3d plot
+```{r}
+library(plotly)
+
+
+p <- plot_ly(compare1, x = ~ffrpth14, y = ~pc_ffrsales12, z = ~pct_diabetes_adults13, color = ~pct_diabetes_adults13, colors = c('#BF382A', '#0C4B8E')) %>%
+  add_markers(text = compare1$state.x) %>%
+  layout(scene = list(xaxis = list(title = 'Restaurants per 1000 population'),
+                     yaxis = list(title = 'Expenditures per capita'),
+                     zaxis = list(title = 'adults diabetes rates in 2013')))
+p
+```
