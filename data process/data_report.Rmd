@@ -380,6 +380,70 @@ Overall, there is a negative linear relationship between diabetes rate and avera
 
 States with below average household income are clustered at lower `average number of supermarke & grocery stores/1000 residents` and high `Diabetes Rate`, which is consistant with previous findings. In addition, obesity may be a confounder in the `diabetes rate vs. store number/1000 residents` relationship, since lower food accessibility are both correlated with diabetes and obesity.
 
+### A linear model that capture the overall association
+After identifying the food related factors that may have certain relationship with adult diabetes prevalence, we decide to construct an explanatory linear model to capture the association as a whole. Since in previous section, we observed a strong linear association between median household income and adult diabetes rate when the income is below 60,000 dollars, we focus on building a model to explain the association between the covariates identified from previous sections and adult diabetes rate in this sub-population. 
+
+The variables we are interested in to build the model for adult diabetes rate at the state level include: 
+
+* adult obesity rate (obe)
+* median household income (MHI)
+* lunch program participation rate (LPPR)
+* the number of Fast-food restaurants per 1,000 population (FFPP)
+* the Expenditures per capita of fast food (EFF)
+* the number of grocery store and supermarket per 1,000 population (store)
+
+```{r fit_model}
+store_data = health_store %>%
+  select(state, store_rate_2014)
+lunch_data = health_13[c(1:51),]
+colnames(compare1)[1:3] = c("state", "diabetes_13", "obesites_13")
+model_data = merge(lunch_data, compare1, by = c("state", "diabetes_13", "obesites_13")) %>%
+  merge(.,store_data, by = "state") %>%
+  select(-`income level`, - program, - ffr14, - state) %>% 
+  filter(medhhinc13 < 60000)
+
+# correlation of variables
+correlation_data = cor(model_data)
+
+# find best model
+## stepwise and backward
+mult.fit.full <- lm(diabetes_13 ~ ., data=model_data)
+step(mult.fit.full, direction='both')
+step(mult.fit.full, direction='back')
+
+## criterion based
+best <- function(model, ...) 
+{
+  subsets <- leaps::regsubsets(formula(model), model.frame(model), ...)
+  subsets <- with(summary(subsets),
+                  cbind(p = as.numeric(rownames(which)), which, rss, rsq, adjr2, cp, bic))
+  
+  return(subsets)
+}  
+
+# Select the 'best' 1 model of all subsets
+round(best(mult.fit.full, nbest = 1), 4)
+
+best_fit = lm(formula = diabetes_13 ~ obesites_13 + medhhinc13 + `participant proportion` + 
+    pc_ffrsales12 + store_rate_2014, data = model_data)
+
+best_fit %>% summary()
+```
+
+Based on the result of both stepwise regression, backward elimination (based on AIP), and criterion-based procedures, we get the following model:
+
+$$Y_{diabetes\ rate} = 2.653 + 0.3958 \cdot X_{obe} - 0.00006 \cdot X_{MHI}- 0.06442 \cdot X_{LPPR} + 0.00337 \cdot X_{EFF} - 4.494 \cdot X_{store}$$
+
+```{r assum_influ}
+check = influence.measures(best_fit)
+# par(mar=c(4,4,1,1))
+# par(mfrow=c(2,2))
+# plot(best_fit)
+```
+
+After checking the model assumptions and influential values, we conclude that this model is a good one to capture the association. The adjust R square is 0.885,
+Indicating that 88.5% variation in adult obesity rate can be explained by this linear model. 
+
 ## Discussion
 At the beginning of this project, we take a look at the diabetes and obesity data in 2008 and 2013. We find that there are strong relationship between diabetes and obesity, meanwhile, southeastern US has higher diabetes and obesity rates. Combining our tests and literature research, it is worth mentioning that national diabetes and obesity rates increase over decades.
 
@@ -399,7 +463,7 @@ We then try to compare the diabetes rate with other possible covariables. When t
 
 * Nguyen, Ninh T., et al. "[Relationship between obesity and diabetes in a US adult population: findings from the National Health and Nutrition Examination Survey, 1999-2006.](https://link.springer.com/content/pdf/10.1007%2Fs11695-010-0335-4.pdf)" Obesity surgery 21.3 (2011): 351-355.
 
-* Salois, Matthew J. "Obesity and diabetes, the built environment, and the ‘local’food economy in the United States, 2007." Economics & Human Biology 10.1 (2012): 35-42.
+* Salois, Matthew J. "Obesity and diabetes, the built environment, and the ???local???food economy in the United States, 2007." Economics & Human Biology 10.1 (2012): 35-42.
 
 * Smyth, Simon, and Andrew Heron. "[Diabetes and obesity: the twin epidemics.](https://www.nature.com/articles/nm0106-75)" Nature medicine 12.1 (2006): 75-80.
 
