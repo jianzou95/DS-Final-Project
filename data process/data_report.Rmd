@@ -1,6 +1,6 @@
 ---
 title: "Health Status and Food Environment"
-author: "Group 9"
+author: "Shengnan Sun(ss5428), Shumin Rui(sr3461), Jian Zou(jz2924), Hsiang-Lun Kao(hk2968)"
 output: 
   html_document:
     code_folding: hide
@@ -30,9 +30,9 @@ theme_update(legend.position = "bottom")
 ## Introduction
 Diabetes is a chronic disease whose prevalence has increased rapidly in the past few decades. According to the report from WHO, in 2014, the prevalence of diabetes among adult population had risen from 4.7% to 8.5%  comparing to that in 1980 (WHO, 2016). It is projected as the seventh leading cause of mortality in 2030 (Mathers & Loncar, 2006).  
 
-In the U.S., the data of 2015 shows that 7.2% of the population are diagnosed with Diabetes(CDC, 2017). In 2013, it ranked as the seventh leading cause of  death in the nation (CDC). Previous studies identified obesity as the main risk factor of  type 2 diabetes (which account for 95% cases of diabetes in the U.S.)(Smyth & Heron, 2006). Meanwhile,  consumption of artificial sweetened beverage(Koning et al, 2011) and  prenatal exposure to famine under certain circumstances(Lumey, Khalangot & Vaiserman, 2015) are both related to the increased prevalence of type 2 diabetes. The report from CDC also demonstrates that there are certain association between socioeconomic status and the prevalence(CDC, 2017). 
+In the U.S., the data of 2015 shows that 7.2% of the population are diagnosed with Diabetes(CDC, 2017). In 2013, it ranked as the seventh leading cause of death in the nation (CDC). Previous studies identified obesity as the main risk factor of type 2 diabetes (which account for 95% cases of diabetes in the U.S.)(Smyth & Heron, 2006). Meanwhile,  consumption of artificial sweetened beverage(Koning et al, 2011) and  prenatal exposure to famine under certain circumstances(Lumey, Khalangot & Vaiserman, 2015) are both related to the increased prevalence of type 2 diabetes. The report from CDC also demonstrates that there are certain association between socioeconomic status and the prevalence(CDC, 2017). 
 
-Inspiring by these findings which are all somehow related to food accessibility, we want to explore the association between food related factors, such as number of restaurants, and the prevalence of diabetes in the US. Over the course of the exploration of the data, we further want to build a model to explain the relationship between food related factors and the prevalence of Diabetes.
+Inspiring by these findings which are all somehow related to food accessibility, we set the goal to explore the association between food related factors, including median household income, participation proportion of National School Lunch Program (NSLP)/School Breakfast Program (SBP), Fast-food restaurants availability, etc. and the prevalence of diabetes in the US. Over the course of the research, we further want to build a model to explain the relationship between food related factors and the prevalence of Diabetes.
 
 ## Data and Method
 The dataset we would like to use is <B>Food Environment Atlas</B> which can be found on [data.gov](https://catalog.data.gov/dataset/food-environment-atlas-f4a22).The detailed description of the dataset can be found on the [Github page](https://github.com/jianzou95/DS-Final-Project/blob/master/archived_documentation_August2015.pdf) of the project The dataset describes food environment factors of each state, including:  
@@ -44,6 +44,8 @@ The dataset we would like to use is <B>Food Environment Atlas</B> which can be f
 In addition to this main dataset, we also use another two dataset, <B>Median Household Income (In 2013 Inflation-adjusted Dollars)</B> by [State Ranked](https://www.census.gov/data/tables/2014/demo/income-poverty/p60-249.html) from Highest to Lowest Using 3-Year Average (2011-2013), and  <B>Median Household Income (In 2008 Inflation-adjusted Dollars)</B> by [State Ranked](https://www.census.gov/data/tables/2009/demo/income-poverty/p60-236.html.) from Highest to Lowest Using 3-Year Average: 2006-2008 from census.gov. 
 
 The two median household income datasets contain the information of median household income of each state (50 states and DC) in 2008 and 2013 collected by U.S. Census Bureau. The income values are evened in a three-year-period (ie. 2006-2008 for 2008, and 2011-2013 for 2013) and adjusted for inflation. 
+
+These two datasets have been merged into one dataframe based on states, and the names of states are converted to abbreviation in order to be compared with the rest dataframes.
 
 All datasets are downloaded directly from the websites as Excel format. 
 
@@ -230,11 +232,11 @@ summary(eco_health %>%
 
 Scatterplots are made to show the association between median household income and adult diabetes rate in the U.S. in both 2008 and 2013.  Overall, we can observe that  the adult diabetes rate increased from 08 to 13. Comparing the two plots, we can observe a similar pattern: when the median household income is below 60,000 dollars, there is a decreasing trend; when the median household income is above 60,000 dollars, there is an increasing trend. 
 
-Two separate linear models are fitted regarding the 60,000 dollars threshold for 2013¡¯s data.  The one for below 60,000 dollars is proved to be significant, with a r-square value of 0. 58, indicating that 58% variation in the adult diabetes rate can be explained by the median household income. However, there is not statistical significant linear relationship between diabetes rate and median household income when the income is above 60,000 dollars.
+Two separate linear models are fitted regarding the 60,000 dollars threshold for 2013??s data.  The one for below 60,000 dollars is proved to be significant, with a $R^{2}$ of 0. 58, indicating that 58% variation in the adult diabetes rate can be explained by the median household income. However, there is not statistical significant linear relationship between diabetes rate and median household income when the income is above 60,000 dollars.
 
 
 ### The relationship between diabetes rate and restaurant
-We would like to find out any association between obesity & diabetes and the information given by the ¡°restaurant¡± sheet in our dataset.  
+We would like to find out any association between obesity & diabetes and the information given by the `restaurant` sheet in our dataset.  
 
 First, we tidy and combine our sheets and make the data present in the terms of state. The variables include: Adult diabetes rate in 2013, Adult Obesity rate in 2013, the number of Fast-food restaurants in 2014, the number of Fast-food restaurants per 1,000 population in  2014 and the Expenditures per capita of fast food in 2012.
 
@@ -250,9 +252,9 @@ compare1 = compare %>%
             pc_ffrsales12 = mean(pc_ffrsales12, na.rm = TRUE))
 ```
 
-Then, we would like to fit a multiple linear regression model. Considering the fact that we have several predictors, we believe that the stepwise regression would give us the best result. The response variable would be the ¡°Adult diabetes rate in 2013¡±.
+Then, we would like to fit a multiple linear regression model. Considering the fact that we have several predictors, we believe that the stepwise regression would give us the best result. The response variable would be the `Adult diabetes rate in 2013`.
 
-After running stepwise regression, the remaining variable were ¡°the number of Fast-food restaurants per 1,000 population in  2014¡± and the ¡°Expenditures per capita of fast food in 2012¡±. The detailed is shown in the `code` part.
+After running stepwise regression, the remaining variable were `the number of Fast-food restaurants per 1,000 population in  2014` and the `Expenditures per capita of fast food in 2012`. The detailed is shown in the `code` part.
 
 ```{r restaurant_lm}
 mult.fit <- lm(pct_diabetes_adults13 ~ ffr14 + ffrpth14 + pc_ffrsales12, data=compare1)
@@ -261,7 +263,7 @@ step(mult.fit, direction='both')
 lm(pct_diabetes_adults13 ~ ffrpth14 + pc_ffrsales12, data=compare1) %>% summary()
 ```
 
-From the summary, we found that the global as well as the two parameters¡¯  p-value is less than 0.05 and the adjusted r-squared value is approximately 0.11. Therefore, we believe that there¡¯s a significant linear relationship. Unfortunately, the relation is not strong.
+From the summary, we found that the global as well as the two parameters' p-value is less than 0.05 and the adjusted r-squared value is approximately 0.11. Therefore, we believe that there's a significant linear relationship. Unfortunately, the relation is not strong.
 
 Thus, the best fitted model would be: 
 $$Y_{i, diabetes rate} = 10.35 - 5.27 \cdot X_{ffrpth14} + 0.006 \cdot X_{pcffrsales12}$$
@@ -317,9 +319,9 @@ ggplot(health_13,aes(x = `participant proportion`, y = diabetes_13)) +
   facet_grid(. ~program, scales = "free")
 ```  
 
-**Note:** the ¡°Income level¡± refers to the level median household income of each state. ¡°Above average¡± income level is defined as median household income above 75% quantile of all the states. ¡°Below average¡± income level is defined as median household income below 25% quantile of all the states. ¡°Middle¡± income is between 25% quantile and 75% quantile.
+**Note:** the `Income level` refers to the level median household income of each state. `Above average` income level is defined as median household income above 75% quantile of all the states. `Below average` income level is defined as median household income below 25% quantile of all the states. `Middle` income is between 25% quantile and 75% quantile.
 
-**Analysis:** The linear relationship between diabetes rate (2013) and average SBP participant proportion or average NSLP participant proportion are both significant with adjusted $R^{2}$ of 38.75% and 24.46% respectively. The results indicate that there is a positive relationship. However, it may be confounded by social and economic status.
+The linear relationship between diabetes rate (2013) and average SBP participant proportion or average NSLP participant proportion are both significant with adjusted $R^{2}$ of 38.75% and 24.46% respectively. The results indicate that there is a positive relationship. However, it may be confounded by social and economic status.
 
 From the scatter plot, we can see that most states with below average median household income (green dots) are above the regression line and most states with above average household income (red dots) are below the line. Therefore, income level may differ the relationship between participant proportion and diabetes rate. In those states with lower average household income, for every unit increase in participant proportion, the expected increase in diabetes rate may be higher than states with higher household income.
 
