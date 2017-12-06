@@ -71,6 +71,19 @@ store =
   clean_names() %>%
   select(1:27)
 
+#diabetes rate of each state in 2009
+diab2009 =  readr::read_csv('../diabetes2009.csv') %>%
+  clean_names() %>% 
+  select(1:2) %>% 
+  mutate(state = state.abb[match(state,state.name)])
+diab2009$state[9] = "DC"
+
+#diabetes rate of each state in 2014
+diab2014 =  readr::read_csv('../diabetes2014.csv') %>%
+  clean_names() %>% 
+  select(1:2) %>% 
+  mutate(state = state.abb[match(state,state.name)])
+diab2014$state[9] = "DC"
 
 medhincome_08 = readxl::read_xls("../mhi_08.xls", range = "A13:B63",col_names = c("state","medhhinc08")) %>%
   clean_names() %>%
@@ -326,11 +339,55 @@ The linear relationship between diabetes rate (2013) and average SBP participant
 
 From the scatter plot, we can see that most states with below average median household income (green dots) are above the regression line and most states with above average household income (red dots) are below the line. Therefore, income level may differ the relationship between participant proportion and diabetes rate. In those states with lower average household income, for every unit increase in participant proportion, the expected increase in diabetes rate may be higher than states with higher household income.
 
+#### The relationship between diabetes rate and the average supermarkets & grocery stores/1,000 residents.
+```{r average_stores}
+health_store = store %>% 
+  group_by(state) %>% 
+  mutate(store_rate_2009 = mean(grocpth09, na.rm = T),
+         store_rate_2014 = mean(grocpth14, na.rm = T),
+         store_mean = (store_rate_2009+store_rate_2014)/2) %>% 
+  select(state,store_rate_2009,store_rate_2014,store_mean) %>% 
+  filter(!(duplicated(state))) %>% 
+  left_join(diab2009, by = "state") %>% 
+  rename(diabetes_2009 = percentage) %>% 
+  left_join(diab2014, by = "state") %>% 
+  rename(diabetes_2014 = percentage) %>% 
+  left_join(medhincome_13, by = "state")
+
+p1 = health_store %>% 
+ggplot(aes(x = store_rate_2009, y = diabetes_2009)) +
+  geom_point(aes(color = `income level`),alpha = .7) +
+  geom_smooth(method = "lm",formula = y~x) +
+  ggpmisc::stat_poly_eq(formula = y~x,
+               aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +
+  coord_cartesian(xlim = c(0.15, 0.5)) +
+  labs(title = "",
+    x = "Average Store/1000 residents",
+    y = "Diabetes Rate(%)") +
+  theme(legend.position = "bottom") 
+
+p2 = health_store %>% 
+ggplot(aes(x = store_rate_2014, y = diabetes_2014)) +
+  geom_point(aes(color = `income level`),alpha = .7) +
+  geom_smooth(method = "lm",formula = y~x) +
+  ggpmisc::stat_poly_eq(formula = y~x,
+               aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +
+  coord_cartesian(xlim = c(0.15, 0.5)) +
+  labs(title = "",
+    x = "Average Store/1000 residents",
+    y = "Diabetes Rate(%)") +
+  theme(legend.position = "bottom") 
+
+cowplot::plot_grid(p1, p2, labels = c("2009","2014"))
+```
+
 
 ## Discussion
 At the beginning of this project, we take a look at the diabetes and obesity data in 2008 and 2013. We find that there are strong relationship between diabetes and obesity, meanwhile, southeastern US has higher diabetes and obesity rates. Combining our tests and literature research, it is worth mentioning that national diabetes and obesity rates increase over decades.
 
-We then try to compare the diabetes rate with other possible covariables. When the median household income is below 60,000 dollars, there is a decreasing trend between income and diabetes rate, while when the income is above, 60,000 dollars, the trend turns to be positive. As for the restaurant data, combining the number of restaurants per 1000 population with the expenditures per capita on fast food, there¡¯s a linear relationship with diabetes rates. Surprisingly, there is a positive relationship between diabetes rate and National School Lunch Program/School Breakfast Program participation proportion, which is counterintuitive -- NSLP and SBP serve nutritious food to children and should negatively correlated with diabetes rate It may be because the association is confounded by other factors such as social-economic factors because children who are eligible for NSLP and SBP tend to come from families with low income. 
+We then try to compare the diabetes rate with other possible covariables. When the median household income is below 60,000 dollars, there is a decreasing trend between income and diabetes rate, while when the income is above, 60,000 dollars, the trend turns to be positive. As for the restaurant data, combining the number of restaurants per 1000 population with the expenditures per capita on fast food, there??s a linear relationship with diabetes rates. Surprisingly, there is a positive relationship between diabetes rate and National School Lunch Program/School Breakfast Program participation proportion, which is counterintuitive -- NSLP and SBP serve nutritious food to children and should negatively correlated with diabetes rate It may be because the association is confounded by other factors such as social-economic factors because children who are eligible for NSLP and SBP tend to come from families with low income. 
 
 
 
