@@ -327,6 +327,16 @@ The linear relationship between diabetes rate (2013) and average SBP participant
 From the scatter plot, we can see that most states with below average median household income (green dots) are above the regression line and most states with above average household income (red dots) are below the line. Therefore, income level may differ the relationship between participant proportion and diabetes rate. In those states with lower average household income, for every unit increase in participant proportion, the expected increase in diabetes rate may be higher than states with higher household income.
 
 
+## Discussion
+At the beginning of this project, we take a look at the diabetes and obesity data in 2008 and 2013. We find that there are strong relationship between diabetes and obesity, meanwhile, southeastern US has higher diabetes and obesity rates. Combining our tests and literature research, it is worth mentioning that national diabetes and obesity rates increase over decades.
+
+We then try to compare the diabetes rate with other possible covariables. When the median household income is below 60,000 dollars, there is a decreasing trend between income and diabetes rate, while when the income is above, 60,000 dollars, the trend turns to be positive. As for the restaurant data, combining the number of restaurants per 1000 population with the expenditures per capita on fast food, there¡¯s a linear relationship with diabetes rates. Surprisingly, there is a positive relationship between diabetes rate and National School Lunch Program/School Breakfast Program participation proportion, which is counterintuitive -- NSLP and SBP serve nutritious food to children and should negatively correlated with diabetes rate It may be because the association is confounded by other factors such as social-economic factors because children who are eligible for NSLP and SBP tend to come from families with low income. 
+
+
+
+
+
+
 ## Reference
 * Centers for Disease Control and Prevention. "[National diabetes statistics report: estimates of diabetes and its burden in the United States, 2017.](https://www.cdc.gov/diabetes/pdfs/data/statistics/national-diabetes-statistics-report.pdf)" Atlanta, GA: National Center for Chronic Disease Prevention and Health Promotion .
 
