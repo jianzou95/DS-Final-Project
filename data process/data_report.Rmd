@@ -35,17 +35,18 @@ In the U.S., the data of 2015 shows that 7.2% of the population are diagnosed wi
 Inspiring by these findings which are all somehow related to food accessibility, we set the goal to explore the association between food related factors, including median household income, participation proportion of National School Lunch Program (NSLP)/School Breakfast Program (SBP), Fast-food restaurants availability, etc. and the prevalence of diabetes in the US. Over the course of the research, we further want to build a model to explain the relationship between food related factors and the prevalence of Diabetes.
 
 ## Data and Method
-The dataset we would like to use is <B>Food Environment Atlas</B> which can be found on [data.gov](https://catalog.data.gov/dataset/food-environment-atlas-f4a22).The detailed description of the dataset can be found on the [Github page](https://github.com/jianzou95/DS-Final-Project/blob/master/archived_documentation_August2015.pdf) of the project The dataset describes food environment factors of each state, including:  
+The dataset we would like to use is <B>Food Environment Atlas</B> which can be found on [data.gov](https://catalog.data.gov/dataset/food-environment-atlas-f4a22).The detailed description of the dataset can be found on the [Github page](https://github.com/jianzou95/DS-Final-Project/blob/master/archived_documentation_August2015.pdf) of the project. The detailed description of the dataset can be found on the Github page of the project, named archived_documentation_August2015.pdf. The dataset contains several spreadsheets which provide information about population characteristics and food factors of each state at the county level.  Some main variables that we are interested in includ:
 
-* Rate of diabetes and obesity in every counties in 2008 and 2013.
-* Participation percentage of National School Lunch Program and School Breakfast Program.
+* Adult diabetes and obesity rate in every countys in 2008 and 2013. They have been summarized into states by evening across counties.  
+* Participation percentage of National School Lunch Program and School Breakfast Program in 2009 and 2014.
+* The number of Fast-food restaurants in 2014, the number of Fast-food restaurants per 1,000 population in  2014 and the Expenditures per capita of fast food in 2012. 
 
 
 In addition to this main dataset, we also use another two dataset, <B>Median Household Income (In 2013 Inflation-adjusted Dollars)</B> by [State Ranked](https://www.census.gov/data/tables/2014/demo/income-poverty/p60-249.html) from Highest to Lowest Using 3-Year Average (2011-2013), and  <B>Median Household Income (In 2008 Inflation-adjusted Dollars)</B> by [State Ranked](https://www.census.gov/data/tables/2009/demo/income-poverty/p60-236.html.) from Highest to Lowest Using 3-Year Average: 2006-2008 from census.gov. 
 
 The two median household income datasets contain the information of median household income of each state (50 states and DC) in 2008 and 2013 collected by U.S. Census Bureau. The income values are evened in a three-year-period (ie. 2006-2008 for 2008, and 2011-2013 for 2013) and adjusted for inflation. 
 
-These two datasets have been merged into one dataframe based on states, and the names of states are converted to abbreviation in order to be compared with the rest dataframes.
+* These two datasets have been merged into one dataframe based on states, and the names of states are converted to abbreviation in order to be compared with the rest dataframes.
 
 All datasets are downloaded directly from the websites as Excel format. 
 
