@@ -370,3 +370,34 @@ Note: the "Income level" refers to the level median household income of each sta
 The linear relationship between diabetes rate (2013) and average SBP participant proportion or average NSLP participant proportion are both significant with adjusted $R^{2}$ of 38.75% and 24.46% respectively. The results indicate that there is a positive relationship. However, it may be confounded by social and economic status.
 
 From the scatter plot, we can see that most states with below average median household income (green dots) are above the regression line and most states with above average household income (red dots) are below the line. Therefore, income level may differ the relationship between participant proportion and diabetes rate. In those states with lower average household income, for every unit increase in participant proportion, the expected increase in diabetes rate may be higher than states with higher household income.
+
+
+###Restaurant
+* Tidy the dataset
+```{r}
+compare = left_join(health, restaurant, by="fips")
+
+compare1 = compare %>%
+  group_by(state.x) %>%
+  summarize(pct_diabetes_adults13 = mean(pct_diabetes_adults13, na.rm = TRUE),
+            pct_obese_adults13 = mean(pct_obese_adults13, na.rm = TRUE),
+            ffr14 = sum(ffr14),
+            ffrpth14 = mean(ffrpth14),
+            pc_ffrsales12 = mean(pc_ffrsales12, na.rm = TRUE))
+```
+
+* Stepwise Regression
+```{r}
+mult.fit <- lm(pct_diabetes_adults13 ~ ffr14 + ffrpth14 + pc_ffrsales12, data=compare1)
+step(mult.fit, direction='both')
+```
+
+* Fit the linear model:
+```{r}
+lm(pct_diabetes_adults13 ~ ffrpth14 + pc_ffrsales12, data=compare1) %>% summary()
+```
+
+* Draw the diagnostics plots
+```{r}
+lm(pct_diabetes_adults13 ~ ffrpth14 + pc_ffrsales12, data=compare1) %>% plot()
+```
