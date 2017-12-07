@@ -165,7 +165,7 @@ t_test_diabetes =
   ggplot() +
   geom_density(aes(x = pct_obese_adults08), color = "#56B4E9", fill ="#56B4E9", alpha = .4) +
   geom_density(aes(x = pct_obese_adults13), color = "#D55E00",fill ="#D55E00", alpha = .4) +
-  labs(title = 'National obesity rate in 08 and 13',
+  labs(title = 'National obesity rate in 08/13',
        x = 'rate of obesity(%)')
 
 t_test_obesity = 
@@ -173,7 +173,7 @@ t_test_obesity =
   ggplot() +
   geom_density(aes(x = pct_diabetes_adults08), color = "#56B4E9", fill ="#56B4E9", alpha = .4) +
   geom_density(aes(x = pct_diabetes_adults13), color = "#D55E00",fill ="#D55E00", alpha = .4) +
-  labs(title = 'National obesites rate in 08 and 13',
+  labs(title = 'National diabetes rate 08/13',
        x = 'rate of diabetes(%)')
 
 grid.arrange(t_test_diabetes, t_test_obesity, ncol=2)
@@ -459,13 +459,13 @@ Most of our results (the association between diabetes rate and obesity, social-e
 
 Based on the result after exploring the one by one relationship betweent adult diabetes rate in the U.S. and each food environment related vairable, a final explanatory linear model is built as:
 $$Y_{diabetes\ rate} = 2.653 + 0.3958 \cdot X_{obe} - 0.00006 \cdot X_{MHI}- 0.06442 \cdot X_{LPPR} + 0.00337 \cdot X_{EFF} - 4.494 \cdot X_{store}$$
-As explained in the result section, this is a good model to capture the relashionship between food envirement factors and U.S. adult diabetes rate based on the adjusted $R^2$ value and the p value of each parameter. 
+As explained in the result section, this is a good model to capture the relationship between food environment factors and U.S. adult diabetes rate based on the adjusted $R^2$ value and the p value of each parameter. 
 
 
 ### Weaknesses
 We mostly used linear regression to detect the relationship, which is limited when exploring association with higher complexity. Even if we explored the relationship with several single factor and then combine them into a full model, the confounding effect has not been discussed in detail. In addition, the main dataset is incomplete with only data of diabetes rate in 2008 and 2013, which causes the limitation of our findings.
 
-The final model we construted is not a prediction model, but a explanatory model. This means we cannot using food environment factors to predict the U.S. adult diabetes rate. One main reason that we did not construt a prediction model is the mismatch of year for different variable. Moreover, since we did the analysis at the state level, some meaningful pattern at county level may be diluted as we simply even the variable among all the counties without considering the population in each county. With higher quility data, further study may try to build a more complex model to achieve the goal of prediction.  
+The final model we constructed is not a prediction model, but a explanatory model. This means we cannot use food environment factors to predict the U.S. adult diabetes rate. One main reason that we did not construct a prediction model is the mismatch of year for different variable. Moreover, since we did the analysis at the state level, some meaningful pattern at county level may be diluted as we simply even the variable among all the counties without considering the population in each county. With higher quality data, further study may try to build a more complex model to achieve the goal of prediction.  
 
 
 
