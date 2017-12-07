@@ -1,7 +1,14 @@
 ---
 title: "Diabetes Rate and Food Environment"
 ---
+<br>
 
-### 
+### Group Member
+Shengnan Sun(ss5428)  
+Shumin Rui(sr3461)  
+Jian Zou(jz2924)  
+Hsiang-Lun Kao(hk2968)
 
-And I can put all kinds of stuff on it!
+### Structure of our study
+* [Introuduction](introduction.html)
+* 

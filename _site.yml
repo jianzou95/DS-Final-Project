@@ -1,10 +1,8 @@
-name: "Yay internet!"
+name: "Group 9 Final Project"
 output_dir: "."
 navbar:
   title: "Home"
   right:
-    - text: "About"
-      href: about.html
     - icon: fa-envelope fa-lg
       href: mailto:<you@youremail.com>
     - icon: fa-github fa-lg
