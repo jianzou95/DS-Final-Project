@@ -1,5 +1,4 @@
 name: "Yay internet!"
-theme: jekyll-theme-slate
 output_dir: "."
 navbar:
   title: "Home"
